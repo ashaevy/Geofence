@@ -10,6 +10,8 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        // http://stackoverflow.com/questions/35739743/file-res-drawable-abc-ic-ab-back-material-xml-from-drawable-resource-id-0x7f020
+        vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
         release {
@@ -26,5 +28,7 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.google.android.gms:play-services:10.0.1'
+    compile 'com.android.support:design:25.1.0'
     testCompile 'junit:junit:4.12'
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-beta4'
 }

@@ -1,4 +1,16 @@
 <resources>
     <string name="app_name">Geofence</string>
     <string name="title_activity_geofence">Geofence</string>
+
+    <!-- ControlsFragment -->
+    <string name="hint_point_x">Point X</string>
+    <string name="hint_point_y">Point Y</string>
+    <string name="hint_radius">Radius</string>
+    <string name="hint_wifi_name">WiFi Name</string>
+    <string name="set_current_wifi">Set current WiFi</string>
+    <string name="start_geofencing">Start Geofencing</string>
+    <string name="stop_geofencing">Stop Geofencing</string>
+    <string name="geofence_state_inside">YOU ARE INSIDE GEOFENCE</string>
+    <string name="geofence_state_unknown">UNKNOWN GEOFENCE STATE</string>
+    <string name="wifi_undefined">Undefined</string>
 </resources>
