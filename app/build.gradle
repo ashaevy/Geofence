@@ -10,8 +10,6 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        // http://stackoverflow.com/questions/35739743/file-res-drawable-abc-ic-ab-back-material-xml-from-drawable-resource-id-0x7f020
-        vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
         release {

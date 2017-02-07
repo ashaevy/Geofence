@@ -24,7 +24,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/hint_point_x"
-            android:inputType="numberDecimal|numberSigned" />
+            android:inputType="numberDecimal|numberSigned"
+            android:maxLines="1" />
 
     </android.support.design.widget.TextInputLayout>
 
@@ -46,7 +47,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/hint_point_y"
-            android:inputType="numberDecimal|numberSigned" />
+            android:inputType="numberDecimal|numberSigned"
+            android:maxLines="1" />
 
     </android.support.design.widget.TextInputLayout>
 
@@ -68,7 +70,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/hint_radius"
-            android:inputType="numberDecimal|numberSigned" />
+            android:inputType="numberDecimal|numberSigned"
+            android:maxLines="1" />
 
     </android.support.design.widget.TextInputLayout>
 
@@ -89,7 +92,8 @@
             android:id="@+id/input_wifi_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/hint_wifi_name" />
+            android:hint="@string/hint_wifi_name"
+            android:maxLines="1" />
 
     </android.support.design.widget.TextInputLayout>
 
