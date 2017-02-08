@@ -6,10 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -17,20 +14,16 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
-import com.google.android.gms.location.GeofencingApi;
 import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Map;
 
+/**
+ * This class contains all helper code to setup receiving geofence transition events from
+ * Google Play Geofence API.
+ */
 public class GeofenceHelper implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
@@ -102,10 +95,20 @@ public class GeofenceHelper implements
     }
 
     public void enableMockLocation() {
+        if (!mGoogleApiClient.isConnected()) {
+            Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, true);
     }
 
     public void disableMockLocation() {
+        if (!mGoogleApiClient.isConnected()) {
+            Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, false);
     }
 
@@ -146,7 +149,7 @@ public class GeofenceHelper implements
     }
 
     /**
-     * Builds and returns a GeofencingRequest. Specifies the list of geofences to be monitored.
+     * Builds and returns a GeofencingRequest. Specifies the geofence to be monitored.
      * Also specifies how the geofence notifications are initially triggered.
      */
     private GeofencingRequest getGeofencingRequest(String requestId, LatLng point, float radius) {
@@ -187,8 +190,8 @@ public class GeofenceHelper implements
     }
 
     /**
-     * Adds geofences, which sets alerts to be notified when the device enters or exits one of the
-     * specified geofences. Handles the success or failure results returned by addGeofences().
+     * Adds geofence, which sets alerts to be notified when the device enters or exits the
+     * specified geofence. Handles the success or failure results returned by addGeofences().
      */
     public void setGeofence(String requestId, LatLng point, float radius) {
         if (!mGoogleApiClient.isConnected()) {
