@@ -1,23 +1,30 @@
 package com.ashaevy.geofence;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.location.Location;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
-import android.view.Display;
 import android.view.View;
+import android.widget.TextView;
 
+import com.google.android.gms.location.Geofence;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -27,12 +34,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.Date;
+import java.util.Map;
+
 public class GeofenceActivity extends FragmentActivity implements
         OnMapReadyCallback, ControlsFragment.OnFragmentInteractionListener,
         GoogleMap.OnMarkerDragListener, GoogleMap.OnMapLongClickListener {
 
-    private static final LatLng KIEV = new LatLng(50.4501, 30.5234);
-    private static final double DEFAULT_RADIUS = 100;
+    public static final LatLng KIEV = new LatLng(50.4501, 30.5234);
+    public static final float DEFAULT_RADIUS = 100;
     public static final double RADIUS_OF_EARTH_METERS = 6371009;
 
     public static final float DEFAULT_STROKE_WIDTH = 2;
@@ -41,6 +51,51 @@ public class GeofenceActivity extends FragmentActivity implements
 
     private GoogleMap mMap;
     private DraggableCircle mGeofenceCircle;
+    private GeofenceHelper mGeofenceHelper;
+
+    private BroadcastReceiver geofenceUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int transitionType = intent.getIntExtra(GeofenceTransitionsIntentService.KEY_GEOFENCE_UPDATE_TYPE, -1);
+            if (transitionType != -1) {
+                switch (transitionType) {
+                    case Geofence.GEOFENCE_TRANSITION_ENTER:
+                        ((TextView) findViewById(R.id.geofence_state)).setText(R.string.geofence_state_inside);
+                        return;
+                    case Geofence.GEOFENCE_TRANSITION_EXIT:
+                        ((TextView) findViewById(R.id.geofence_state)).setText(R.string.geofence_state_outsize);
+                        return ;
+                    default:
+                        ((TextView) findViewById(R.id.geofence_state)).setText(R.string.geofence_state_unknown);
+                        return ;
+                }
+            }
+        }
+    };
+
+    private static class MapLocationSource implements LocationSource {
+        private OnLocationChangedListener mOnLocationChangedListener;
+
+        @Override
+        public void activate(OnLocationChangedListener onLocationChangedListener) {
+            mOnLocationChangedListener = onLocationChangedListener;
+        }
+
+        @Override
+        public void deactivate() {
+            mOnLocationChangedListener = null;
+        }
+
+        public boolean setLocation(Location location) {
+            if (mOnLocationChangedListener != null) {
+                mOnLocationChangedListener.onLocationChanged(location);
+                return true;
+            }
+            return false;
+        }
+    };
+
+    private MapLocationSource mLocationSource = new MapLocationSource();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,8 +116,66 @@ public class GeofenceActivity extends FragmentActivity implements
                 }
             }
         });
+
+        findViewById(R.id.start_geofencing).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mGeofenceHelper.setGeofence("GEOFENCE_CIRCLE",
+                        mGeofenceCircle.centerMarker.getPosition(), ((float) mGeofenceCircle.radius));
+            }
+        });
+
+        findViewById(R.id.stop_geofencing).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO check client
+                mGeofenceHelper.disableMockLocation();
+                mGeofenceHelper.removeGeofence();
+                ((TextView) findViewById(R.id.geofence_state)).setText(R.string.geofence_state_unknown);
+            }
+        });
+
+        findViewById(R.id.button_random_location).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Location mockLocation = generateRandomTestLocation();
+                mGeofenceHelper.setMockLocation(mockLocation);
+                mLocationSource.setLocation(mockLocation);
+            }
+        });
+
+        mGeofenceHelper = new GeofenceHelper(this);
+        mGeofenceHelper.create();
     }
 
+    public Location generateRandomTestLocation() {
+        Location location = new Location(LocationManager.NETWORK_PROVIDER);
+        location.setLatitude(KIEV.latitude + Math.random() * 0.1);
+        location.setLongitude(KIEV.longitude + Math.random() * 0.1);
+        location.setTime(new Date().getTime());
+        location.setAccuracy(3.0f);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            location.setElapsedRealtimeNanos(System.nanoTime());
+        }
+
+        return location;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(GeofenceTransitionsIntentService.GEOFENCE_UPDATED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(geofenceUpdateReceiver, filter);
+        mGeofenceHelper.start();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mGeofenceHelper.stop();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(geofenceUpdateReceiver);
+    }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -75,6 +188,8 @@ public class GeofenceActivity extends FragmentActivity implements
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(KIEV, getZoomLevel(mGeofenceCircle.circle)));
 
         // FIXME add premission check
+
+        mMap.setLocationSource(mLocationSource);
         mMap.setMyLocationEnabled(true);
     }
 
