@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.location.Location;
 import android.net.Uri;
+import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.view.Display;
@@ -54,6 +55,9 @@ public class GeofenceActivity extends FragmentActivity implements
 
         mGeofenceCircle = new DraggableCircle(KIEV, DEFAULT_RADIUS, true);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(KIEV, getZoomLevel(mGeofenceCircle.circle)));
+
+        // FIXME add premission check
+        mMap.setMyLocationEnabled(true);
     }
 
     public int getZoomLevel(Circle circle) {
@@ -88,6 +92,14 @@ public class GeofenceActivity extends FragmentActivity implements
 
     private void onMarkerMoved(Marker marker) {
         mGeofenceCircle.onMarkerMoved(marker);
+        updateEdits();
+    }
+
+    private void updateEdits() {
+        LatLng position = mGeofenceCircle.centerMarker.getPosition();
+        ((TextInputEditText) findViewById(R.id.input_point_x)).setText(String.valueOf(position.latitude));
+        ((TextInputEditText) findViewById(R.id.input_point_y)).setText(String.valueOf(position.longitude));
+        ((TextInputEditText) findViewById(R.id.input_radius)).setText(String.valueOf(mGeofenceCircle.radius));
     }
 
     @Override
