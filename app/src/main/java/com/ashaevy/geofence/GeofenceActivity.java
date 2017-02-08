@@ -1,13 +1,20 @@
 package com.ashaevy.geofence;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.Display;
+import android.view.View;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -43,6 +50,17 @@ public class GeofenceActivity extends FragmentActivity implements
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        findViewById(R.id.button_set_current_wifi).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String currentSsid = getCurrentSsid(GeofenceActivity.this);
+                if (currentSsid != null) {
+                    ((TextInputEditText) findViewById(R.id.input_wifi_name)).
+                            setText(currentSsid);
+                }
+            }
+        });
     }
 
 
@@ -149,6 +167,25 @@ public class GeofenceActivity extends FragmentActivity implements
         public void setClickable(boolean clickable) {
             circle.setClickable(clickable);
         }
+    }
+
+    public static String getCurrentSsid(Context context) {
+        String ssid = null;
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        if (networkInfo == null) {
+            return null;
+        }
+
+        if (networkInfo.isConnected()) {
+            final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+            final WifiInfo connectionInfo = wifiManager.getConnectionInfo();
+            if (connectionInfo != null && !TextUtils.isEmpty(connectionInfo.getSSID())) {
+                ssid = connectionInfo.getSSID();
+            }
+        }
+
+        return ssid;
     }
 
     /** Generate LatLng of radius marker */
