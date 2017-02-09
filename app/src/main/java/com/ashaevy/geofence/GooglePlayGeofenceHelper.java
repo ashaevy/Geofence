@@ -23,7 +23,7 @@ import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
  * This class contains all helper code to setup receiving geofence transition events from
  * Google Play Geofence API.
  */
-public class GeofenceHelper implements
+public class GooglePlayGeofenceHelper implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         ResultCallback<Status> {
@@ -43,7 +43,7 @@ public class GeofenceHelper implements
      */
     private PendingIntent mGeofencePendingIntent;
 
-    public GeofenceHelper(Context context, GeofenceContract.Presenter presenter) {
+    public GooglePlayGeofenceHelper(Context context, GeofenceContract.Presenter presenter) {
         mContext = context;
         mPresenter = presenter;
     }

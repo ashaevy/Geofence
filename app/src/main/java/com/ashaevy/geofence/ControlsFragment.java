@@ -109,14 +109,14 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
     }
 
     @Override
-    public void setTransitionType(int transitionType) {
+    public void setGeofenceState(int geofenceState) {
         View view = getView();
         if (view != null) {
-            switch (transitionType) {
-                case Geofence.GEOFENCE_TRANSITION_ENTER:
+            switch (geofenceState) {
+                case Constants.GEOFENCE_STATE_INSIDE:
                     ((TextView) view.findViewById(R.id.geofence_state)).setText(R.string.geofence_state_inside);
                     return;
-                case Geofence.GEOFENCE_TRANSITION_EXIT:
+                case Constants.GEOFENCE_STATE_OUTSIDE:
                     ((TextView) view.findViewById(R.id.geofence_state)).setText(R.string.geofence_state_outsize);
                     return;
                 default:

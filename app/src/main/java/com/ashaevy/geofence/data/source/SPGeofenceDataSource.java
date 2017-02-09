@@ -45,4 +45,16 @@ public class SPGeofenceDataSource implements GeofenceDataSource {
         editor.putBoolean(Constants.GEOFENCES_ADDED_KEY, geofencesAdded);
         editor.apply();
     }
+
+    @Override
+    public void saveGeofenceTransition(int transition) {
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        editor.putInt(Constants.GEOFENCE_TRANSITION_KEY, transition);
+        editor.apply();
+    }
+
+    @Override
+    public int readGeofenceTransition() {
+        return mSharedPreferences.getInt(Constants.GEOFENCE_TRANSITION_KEY, -1);
+    }
 }

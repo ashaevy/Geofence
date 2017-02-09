@@ -26,7 +26,7 @@ public interface GeofenceContract {
 
         void updateGeofence(GeofenceData geofenceData);
 
-        void setTransitionType(int transitionType);
+        void setGeofenceState(int transitionType);
 
         void setGeofencingStarted(boolean started);
 

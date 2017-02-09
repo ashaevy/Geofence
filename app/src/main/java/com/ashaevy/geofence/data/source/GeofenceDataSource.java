@@ -11,4 +11,7 @@ public interface GeofenceDataSource {
 
     boolean geofenceAdded();
     void saveGeofenceAdded(boolean geofencesAdded);
+
+    void saveGeofenceTransition(int transition);
+    int readGeofenceTransition();
 }

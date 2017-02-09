@@ -17,11 +17,15 @@ public final class Constants {
 
     public static final String GEOFENCES_ADDED_KEY = PACKAGE_NAME + ".GEOFENCES_ADDED_KEY";
     public static final String GEOFENCE_DATA_KEY = PACKAGE_NAME + ".GEOFENCE_DATA_KEY";
+    public static final String GEOFENCE_TRANSITION_KEY = PACKAGE_NAME + ".GEOFENCE_TRANSITION_KEY";
 
     public static final double RADIUS_OF_EARTH_METERS = 6371009;
 
     public static final LatLng KIEV = new LatLng(50.4501, 30.5234);
     public static final float DEFAULT_RADIUS = 100;
 
+    public static final int GEOFENCE_STATE_UNKNOWN = -1;
+    public static final int GEOFENCE_STATE_INSIDE = 1;
+    public static final int GEOFENCE_STATE_OUTSIDE = 2;
 
 }
