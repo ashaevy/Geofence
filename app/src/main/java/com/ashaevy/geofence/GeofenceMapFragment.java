@@ -40,6 +40,8 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
         if (mGeofenceCircle != null) {
             LatLng position = new LatLng(geofenceData.getLatitude(), geofenceData.getLongitude());
             mGeofenceCircle.updateCircleParams(position, geofenceData.getRadius());
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position,
+                    getZoomLevel(mGeofenceCircle.circle)));
         }
     }
 
@@ -82,6 +84,10 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
+
+        // we want to avoid unnecessary map recreation
+        setRetainInstance(true);
+
         getMapAsync(this);
     }
 

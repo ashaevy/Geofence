@@ -55,9 +55,6 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         mControlsView = controlsView;
         mContext = context;
 
-        mMapView.setPresenter(this);
-        mControlsView.setPresenter(this);
-
         mGeofenceDataSource = new SPGeofenceDataSource(mContext);
 
         mGeofencesAdded = mGeofenceDataSource.geofenceAdded();
@@ -79,8 +76,6 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
                 generateDefaultGeofence();
             }
 
-            // set values for the first time
-            mControlsView.updateGeofence(mCurrentGeofenceData);
         }
 
         mCurrentTransitionType = UNKNOWN_TRANSITION_TYPE;
@@ -88,6 +83,8 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         mGeofenceHelper = new GeofenceHelper(context, this);
         mGeofenceHelper.create();
 
+        mMapView.setPresenter(this);
+        mControlsView.setPresenter(this);
     }
 
     private void generateDefaultGeofence() {
@@ -122,8 +119,6 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     @Override
     public void startGeofencing() {
-        mControlsView.requestUpdatePresenter();
-
         LatLng position = new LatLng(mCurrentGeofenceData.getLatitude(),
                 mCurrentGeofenceData.getLongitude());
         mGeofenceHelper.addGeofence("GEOFENCE_CIRCLE",

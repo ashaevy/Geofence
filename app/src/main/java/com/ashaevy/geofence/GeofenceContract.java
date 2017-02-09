@@ -30,7 +30,6 @@ public interface GeofenceContract {
 
         void setGeofencingStarted(boolean started);
 
-        void requestUpdatePresenter();
     }
 
     interface Presenter {

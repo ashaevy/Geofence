@@ -3,6 +3,7 @@ package com.ashaevy.geofence;
 import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -14,6 +15,8 @@ import com.ashaevy.geofence.data.GeofenceData;
 import com.google.android.gms.location.Geofence;
 
 public class ControlsFragment extends Fragment implements GeofenceContract.ControlsView {
+
+    private final String TAG = "ControlsFragment";
 
     private GeofenceContract.Presenter mPresenter;
     private TextInputEditText mPointXInput;
@@ -30,6 +33,9 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
     @Override
     public void setPresenter(GeofenceContract.Presenter presenter) {
         mPresenter = presenter;
+
+        // first setup
+        updateGeofence(mPresenter.getGeofenceData());
     }
 
     public static ControlsFragment newInstance() {
@@ -42,13 +48,6 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         // Inflate the layout for this fragment
         final View view = inflater.inflate(R.layout.fragment_controls, container, false);
 
-        view.findViewById(R.id.button_set_current_wifi).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mPresenter.setCurrentWiFi();
-            }
-        });
-
         mStartGeofencingButton = view.findViewById(R.id.start_geofencing);
         mStopGeofencingButton = view.findViewById(R.id.stop_geofencing);
 
@@ -60,7 +59,7 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         View.OnFocusChangeListener onFocusChangeListener = new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean b) {
-                requestUpdatePresenter();
+                tryUpdatePresenterData(false);
             }
         };
         mPointXInput.setOnFocusChangeListener(onFocusChangeListener);
@@ -68,10 +67,19 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         mRadiusInput.setOnFocusChangeListener(onFocusChangeListener);
         mWiFiNameInput.setOnFocusChangeListener(onFocusChangeListener);
 
+        view.findViewById(R.id.button_set_current_wifi).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPresenter.setCurrentWiFi();
+            }
+        });
+
         mStartGeofencingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mPresenter.startGeofencing();
+                if (tryUpdatePresenterData(true)) {
+                    mPresenter.startGeofencing();
+                }
             }
         });
 
@@ -88,7 +96,6 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
                 mPresenter.setRandomMockLocation();
             }
         });
-
 
         return view;
     }
@@ -129,22 +136,66 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         mStopGeofencingButton.setEnabled(started);
     }
 
-    @Override
-    public void requestUpdatePresenter() {
-        //TODO add validation
-        //TODO add formatting
+    public boolean tryUpdatePresenterData(boolean reportError) {
+        try {
+            GeofenceData geofenceData = new GeofenceData();
+            geofenceData.setLatitude(doubleInputValidation(mPointXInput));
+            geofenceData.setLongitude(doubleInputValidation(mPointYInput));
+            geofenceData.setRadius(doubleInputValidation(mRadiusInput));
 
-        GeofenceData geofenceData = new GeofenceData();
-        geofenceData.setLatitude(Double.parseDouble(mPointXInput.getText().toString()));
-        geofenceData.setLongitude(Double.parseDouble(mPointYInput.getText().toString()));
-        geofenceData.setRadius(Double.parseDouble(mRadiusInput.getText().toString()));
-        Editable text = mWiFiNameInput.getText();
-        if (!TextUtils.isEmpty(text)) {
-            geofenceData.setWifiName(text.toString());
-        } else {
-            geofenceData.setWifiName(null);
+            Editable text = mWiFiNameInput.getText();
+            if (!TextUtils.isEmpty(text)) {
+                geofenceData.setWifiName(text.toString());
+            } else {
+                throw new ValidationException();
+            }
+
+            mPresenter.updateGeofenceFromControls(geofenceData);
+
+            return true;
+        } catch (ValidationException e) {
+
+            if (reportError) {
+                showErrorDialog();
+
+                // revert data
+                updateGeofence(mPresenter.getGeofenceData());
+            }
+
+            return false;
         }
-        mPresenter.updateGeofenceFromControls(geofenceData);
+    }
+
+    private void showErrorDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
+        builder.setMessage(R.string.validation_error)
+                .setTitle(R.string.validation_error_dialog_title);
+
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
+    }
+
+    private double doubleInputValidation(TextInputEditText doubleTextInputEditText) {
+        Editable editable = doubleTextInputEditText.getText();
+        if (TextUtils.isEmpty(editable)) {
+            throw new ValidationException();
+        }
+        try {
+            return Double.parseDouble(editable.toString());
+        } catch (NumberFormatException e) {
+            throw new ValidationException();
+        }
+    }
+
+    private static class ValidationException extends RuntimeException {
+        public ValidationException() {}
+
+        public ValidationException(String message) {
+            super(message);
+        }
+
     }
 
 }

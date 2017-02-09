@@ -39,4 +39,7 @@
     <string name="unknown_geofence_transition">Unknown Transition</string>
 
     <string name="geofence_transition_notification_text">Click notification to return to app</string>
+
+    <string name="validation_error">Invalid input. Coordinates and radius must be double and WiFi name should not be empty!</string>
+    <string name="validation_error_dialog_title">Error!</string>
 </resources>
