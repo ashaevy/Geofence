@@ -11,16 +11,20 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
+import android.widget.Toast;
 
 import com.ashaevy.geofence.data.GeofenceData;
+import com.ashaevy.geofence.data.source.GeofenceDataSource;
+import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.Date;
 
 /**
- * Created by ashaevy on 08.02.17.
+ * Synchronize Map and Controls. Listen to geofense transition changes. Updates Views.
  */
 public class GeofencePresenter implements GeofenceContract.Presenter {
 
@@ -36,8 +40,17 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     private GeofenceData mCurrentGeofenceData;
     private int mCurrentTransitionType;
 
+    private String KEY_LAT = "KEY_LAT";
+    private String KEY_LON = "KEY_LON";
+    private String KEY_R = "KEY_R";
+    private String KEY_WIFI = "KEY_WIFI";
+    private String KEY_TRANSITION = "KEY_TRANSITION";
+
+    private boolean mGeofencesAdded;
+    private final GeofenceDataSource mGeofenceDataSource;
+
     public GeofencePresenter(Context context, GeofenceContract.MapView mapView,
-                             GeofenceContract.ControlsView controlsView) {
+                             GeofenceContract.ControlsView controlsView, Bundle savedInstanceState) {
         mMapView = mapView;
         mControlsView = controlsView;
         mContext = context;
@@ -45,12 +58,42 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         mMapView.setPresenter(this);
         mControlsView.setPresenter(this);
 
+        mGeofenceDataSource = new SPGeofenceDataSource(mContext);
+
+        mGeofencesAdded = mGeofenceDataSource.geofenceAdded();
+        setGeofenceAdded(mGeofencesAdded);
+
+
         mCurrentGeofenceData = new GeofenceData();
+        if (savedInstanceState != null) {
+            mCurrentGeofenceData.setLatitude(savedInstanceState.getDouble(KEY_LAT));
+            mCurrentGeofenceData.setLongitude(savedInstanceState.getDouble(KEY_LON));
+            mCurrentGeofenceData.setRadius(savedInstanceState.getDouble(KEY_R));
+            mCurrentGeofenceData.setWifiName(savedInstanceState.getString(KEY_WIFI));
+            mCurrentTransitionType = savedInstanceState.getInt(KEY_TRANSITION);
+        } else {
+            GeofenceData storedGeofenceData = mGeofenceDataSource.readGeofenceData();
+            if (storedGeofenceData != null) {
+                mCurrentGeofenceData = storedGeofenceData;
+            } else {
+                generateDefaultGeofence();
+            }
+
+            // set values for the first time
+            mControlsView.updateGeofence(mCurrentGeofenceData);
+        }
+
         mCurrentTransitionType = UNKNOWN_TRANSITION_TYPE;
 
-        mGeofenceHelper = new GeofenceHelper(context);
+        mGeofenceHelper = new GeofenceHelper(context, this);
         mGeofenceHelper.create();
 
+    }
+
+    private void generateDefaultGeofence() {
+        mCurrentGeofenceData.setLatitude(Constants.KIEV.latitude);
+        mCurrentGeofenceData.setLongitude(Constants.KIEV.longitude);
+        mCurrentGeofenceData.setRadius(Constants.DEFAULT_RADIUS);
     }
 
     @Override
@@ -79,10 +122,21 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     @Override
     public void startGeofencing() {
+        mControlsView.requestUpdatePresenter();
+
         LatLng position = new LatLng(mCurrentGeofenceData.getLatitude(),
                 mCurrentGeofenceData.getLongitude());
-        mGeofenceHelper.setGeofence("GEOFENCE_CIRCLE",
+        mGeofenceHelper.addGeofence("GEOFENCE_CIRCLE",
                 position, ((float) mCurrentGeofenceData.getRadius()));
+
+        mGeofenceDataSource.saveGeofenceData(mCurrentGeofenceData);
+    }
+
+    private void setGeofenceAdded(boolean added) {
+        mGeofencesAdded = added;
+
+        mControlsView.setGeofencingStarted(added);
+        mMapView.setGeofencingStarted(added);
     }
 
     @Override
@@ -97,7 +151,7 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     public void setRandomMockLocation() {
         Location mockLocation = generateRandomTestLocation();
         mGeofenceHelper.setMockLocation(mockLocation);
-        mMapView.setLocation(mockLocation);
+        mMapView.setMockLocation(mockLocation);
     }
 
     @Override
@@ -107,6 +161,21 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
             mCurrentGeofenceData.setWifiName(currentSsid);
             mControlsView.updateGeofence(mCurrentGeofenceData);
         }
+    }
+
+    @Override
+    public void updateGeofenceFromControls(GeofenceData geofenceData) {
+        mCurrentGeofenceData.setLatitude(geofenceData.getLatitude());
+        mCurrentGeofenceData.setLongitude(geofenceData.getLongitude());
+        mCurrentGeofenceData.setRadius(geofenceData.getRadius());
+        mCurrentGeofenceData.setWifiName(geofenceData.getWifiName());
+
+        mMapView.updateGeofence(mCurrentGeofenceData);
+    }
+
+    @Override
+    public GeofenceData getGeofenceData() {
+        return mCurrentGeofenceData;
     }
 
     private Location generateRandomTestLocation() {
@@ -148,5 +217,30 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         }
 
         return ssid;
+    }
+
+    @Override
+    public void saveInstanceState(Bundle outState) {
+        outState.putDouble(KEY_LAT, mCurrentGeofenceData.getLatitude());
+        outState.putDouble(KEY_LON, mCurrentGeofenceData.getLongitude());
+        outState.putDouble(KEY_R, mCurrentGeofenceData.getRadius());
+        outState.putString(KEY_WIFI, mCurrentGeofenceData.getWifiName());
+
+        outState.putInt(KEY_TRANSITION, mCurrentTransitionType);
+    }
+
+    @Override
+    public void updateGeofenceAddedState() {
+        // Update state and save in shared preferences.
+        setGeofenceAdded(!mGeofencesAdded);
+
+        mGeofenceDataSource.saveGeofenceAdded(mGeofencesAdded);
+
+        Toast.makeText(
+                mContext,
+                mContext.getString(mGeofencesAdded ? R.string.geofences_added :
+                        R.string.geofences_removed),
+                Toast.LENGTH_SHORT
+        ).show();
     }
 }

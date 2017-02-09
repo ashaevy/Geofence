@@ -3,6 +3,7 @@ package com.ashaevy.geofence;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.ashaevy.geofence.data.GeofenceData;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -18,11 +19,12 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 /**
- * Created by ashaevy on 08.02.17.
+ * Google Map Fragment that shows draggable and resizable circle.
  */
-
 public class GeofenceMapFragment extends SupportMapFragment implements GeofenceContract.MapView,
         OnMapReadyCallback, GoogleMap.OnMarkerDragListener {
+
+    private static final String TAG = "GeofenceMapFragment";
 
     private static final float DEFAULT_STROKE_WIDTH = 2;
     private static final int DEFAULT_FILL_COLOR = Color.parseColor("#4de95367");
@@ -35,13 +37,22 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
 
     @Override
     public void updateGeofence(GeofenceData geofenceData) {
-        LatLng position = new LatLng(geofenceData.getLatitude(), geofenceData.getLongitude());
-        mGeofenceCircle.updateCircleParams(position, geofenceData.getRadius());
+        if (mGeofenceCircle != null) {
+            LatLng position = new LatLng(geofenceData.getLatitude(), geofenceData.getLongitude());
+            mGeofenceCircle.updateCircleParams(position, geofenceData.getRadius());
+        }
     }
 
     @Override
-    public void setLocation(Location location) {
+    public void setMockLocation(Location location) {
         mLocationSource.setLocation(location);
+    }
+
+    @Override
+    public void setGeofencingStarted(boolean started) {
+        if (mMap != null) {
+            mGeofenceCircle.setEditable(!started);
+        }
     }
 
     private static class MapLocationSource implements LocationSource {
@@ -80,13 +91,22 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
 
         mMap.setOnMarkerDragListener(this);
 
-        mGeofenceCircle = new DraggableCircle(Constants.KIEV, Constants.DEFAULT_RADIUS, true);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Constants.KIEV, getZoomLevel(mGeofenceCircle.circle)));
+        GeofenceData geofenceData = mPresenter.getGeofenceData();
+        LatLng center = new LatLng(geofenceData.getLatitude(), geofenceData.getLongitude());
+        mGeofenceCircle = new DraggableCircle(center, geofenceData.getRadius(), true);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center,
+                getZoomLevel(mGeofenceCircle.circle)));
 
-        // FIXME add premission check
+        setupUsageOfMockLocation();
+    }
 
-        mMap.setLocationSource(mLocationSource);
-        mMap.setMyLocationEnabled(true);
+    private void setupUsageOfMockLocation() {
+        try {
+            mMap.setLocationSource(mLocationSource);
+            mMap.setMyLocationEnabled(true);
+        } catch (SecurityException e) {
+            Log.e(TAG, "Can't setup mock location.");
+        }
     }
 
     @Override
@@ -176,23 +196,20 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
             radiusMarker.setPosition(toRadiusLatLng(position, radius));
         }
 
-        public void setRadius(double radius) {
-            this.radius = radius;
-            radiusMarker.setPosition(toRadiusLatLng(centerMarker.getPosition(), radius));
-        }
-
         public void updateCircleParams(LatLng position, double radius) {
-            circle.setCenter(position);
             this.radius = radius;
+            circle.setCenter(position);
+            circle.setRadius(radius);
+            centerMarker.setPosition(position);
             radiusMarker.setPosition(toRadiusLatLng(centerMarker.getPosition(), radius));
         }
 
-        public void setClickable(boolean clickable) {
-            circle.setClickable(clickable);
+        public void setEditable(boolean editable) {
+            centerMarker.setDraggable(editable);
+            radiusMarker.setDraggable(editable);
         }
     }
 
-    /** Generate LatLng of radius marker */
     private static LatLng toRadiusLatLng(LatLng center, double radius) {
         double radiusAngle = Math.toDegrees(radius / Constants.RADIUS_OF_EARTH_METERS) /
                 Math.cos(Math.toRadians(center.latitude));

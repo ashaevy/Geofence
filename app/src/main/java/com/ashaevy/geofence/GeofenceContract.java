@@ -1,6 +1,7 @@
 package com.ashaevy.geofence;
 
 import android.location.Location;
+import android.os.Bundle;
 
 import com.ashaevy.geofence.data.GeofenceData;
 
@@ -8,22 +9,33 @@ import com.ashaevy.geofence.data.GeofenceData;
  * Contract between Views and Presenters.
  */
 public interface GeofenceContract {
-    interface MapView extends BaseView<Presenter> {
+    interface MapView {
+
+        void setPresenter(Presenter presenter);
 
         void updateGeofence(GeofenceData geofenceData);
 
-        void setLocation(Location location);
+        void setMockLocation(Location location);
+
+        void setGeofencingStarted(boolean started);
     }
 
-    interface ControlsView extends BaseView<Presenter> {
+    interface ControlsView {
+
+        void setPresenter(Presenter presenter);
 
         void updateGeofence(GeofenceData geofenceData);
 
         void setTransitionType(int transitionType);
 
+        void setGeofencingStarted(boolean started);
+
+        void requestUpdatePresenter();
     }
 
-    interface Presenter extends BasePresenter {
+    interface Presenter {
+
+        void start();
 
         void stop();
 
@@ -36,5 +48,13 @@ public interface GeofenceContract {
         void setRandomMockLocation();
 
         void setCurrentWiFi();
+
+        void updateGeofenceFromControls(GeofenceData geofenceData);
+
+        GeofenceData getGeofenceData();
+
+        void saveInstanceState(Bundle outState);
+
+        void updateGeofenceAddedState();
     }
 }

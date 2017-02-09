@@ -3,6 +3,8 @@ package com.ashaevy.geofence;
 import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.Fragment;
+import android.text.Editable;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +16,12 @@ import com.google.android.gms.location.Geofence;
 public class ControlsFragment extends Fragment implements GeofenceContract.ControlsView {
 
     private GeofenceContract.Presenter mPresenter;
+    private TextInputEditText mPointXInput;
+    private TextInputEditText mPointYInput;
+    private TextInputEditText mRadiusInput;
+    private TextInputEditText mWiFiNameInput;
+    private View mStartGeofencingButton;
+    private View mStopGeofencingButton;
 
     public ControlsFragment() {
         // Required empty public constructor
@@ -38,20 +46,36 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
             @Override
             public void onClick(View v) {
                 mPresenter.setCurrentWiFi();
-
-                //FIXME
-
             }
         });
 
-        view.findViewById(R.id.start_geofencing).setOnClickListener(new View.OnClickListener() {
+        mStartGeofencingButton = view.findViewById(R.id.start_geofencing);
+        mStopGeofencingButton = view.findViewById(R.id.stop_geofencing);
+
+        mPointXInput = (TextInputEditText) view.findViewById(R.id.input_point_x);
+        mPointYInput = ((TextInputEditText) view.findViewById(R.id.input_point_y));
+        mRadiusInput = ((TextInputEditText) view.findViewById(R.id.input_radius));
+        mWiFiNameInput = ((TextInputEditText) view.findViewById(R.id.input_wifi_name));
+
+        View.OnFocusChangeListener onFocusChangeListener = new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean b) {
+                requestUpdatePresenter();
+            }
+        };
+        mPointXInput.setOnFocusChangeListener(onFocusChangeListener);
+        mPointYInput.setOnFocusChangeListener(onFocusChangeListener);
+        mRadiusInput.setOnFocusChangeListener(onFocusChangeListener);
+        mWiFiNameInput.setOnFocusChangeListener(onFocusChangeListener);
+
+        mStartGeofencingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mPresenter.startGeofencing();
             }
         });
 
-        view.findViewById(R.id.stop_geofencing).setOnClickListener(new View.OnClickListener() {
+        mStopGeofencingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mPresenter.stopGeofencing();
@@ -65,18 +89,16 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
             }
         });
 
+
         return view;
     }
 
     @Override
     public void updateGeofence(GeofenceData geofenceData) {
-        View view = getView();
-        if (view != null) {
-            ((TextInputEditText) view.findViewById(R.id.input_point_x)).setText(String.valueOf(geofenceData.getLatitude()));
-            ((TextInputEditText) view.findViewById(R.id.input_point_y)).setText(String.valueOf(geofenceData.getLongitude()));
-            ((TextInputEditText) view.findViewById(R.id.input_radius)).setText(String.valueOf(geofenceData.getRadius()));
-            ((TextInputEditText) view.findViewById(R.id.input_wifi_name)).setText(String.valueOf(geofenceData.getWifiName()));
-        }
+        mPointXInput.setText(String.valueOf(geofenceData.getLatitude()));
+        mPointYInput.setText(String.valueOf(geofenceData.getLongitude()));
+        mRadiusInput.setText(String.valueOf(geofenceData.getRadius()));
+        mWiFiNameInput.setText(geofenceData.getWifiName());
     }
 
     @Override
@@ -94,6 +116,35 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
                     ((TextView) view.findViewById(R.id.geofence_state)).setText(R.string.geofence_state_unknown);
             }
         }
+    }
+
+    @Override
+    public void setGeofencingStarted(boolean started) {
+        mPointXInput.setEnabled(!started);
+        mPointYInput.setEnabled(!started);
+        mRadiusInput.setEnabled(!started);
+        mWiFiNameInput.setEnabled(!started);
+
+        mStartGeofencingButton.setEnabled(!started);
+        mStopGeofencingButton.setEnabled(started);
+    }
+
+    @Override
+    public void requestUpdatePresenter() {
+        //TODO add validation
+        //TODO add formatting
+
+        GeofenceData geofenceData = new GeofenceData();
+        geofenceData.setLatitude(Double.parseDouble(mPointXInput.getText().toString()));
+        geofenceData.setLongitude(Double.parseDouble(mPointYInput.getText().toString()));
+        geofenceData.setRadius(Double.parseDouble(mRadiusInput.getText().toString()));
+        Editable text = mWiFiNameInput.getText();
+        if (!TextUtils.isEmpty(text)) {
+            geofenceData.setWifiName(text.toString());
+        } else {
+            geofenceData.setWifiName(null);
+        }
+        mPresenter.updateGeofenceFromControls(geofenceData);
     }
 
 }

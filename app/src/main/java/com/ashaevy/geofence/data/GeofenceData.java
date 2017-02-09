@@ -1,7 +1,7 @@
 package com.ashaevy.geofence.data;
 
 /**
- * Created by ashaevy on 08.02.17.
+ * POJO that stores data about current geofence configuration.
  */
 
 public class GeofenceData {

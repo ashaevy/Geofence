@@ -3,6 +3,9 @@ package com.ashaevy.geofence;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 
+/**
+ * Main activity.
+ */
 public class GeofenceActivity extends FragmentActivity {
 
     private GeofencePresenter mGeofencePresenter;
@@ -17,7 +20,7 @@ public class GeofenceActivity extends FragmentActivity {
         GeofenceContract.ControlsView controlsView = ((GeofenceContract.ControlsView)
                 getSupportFragmentManager().findFragmentById(R.id.controls));
 
-        mGeofencePresenter = new GeofencePresenter(this, mapView, controlsView);
+        mGeofencePresenter = new GeofencePresenter(this, mapView, controlsView, savedInstanceState);
 
     }
 
@@ -25,6 +28,13 @@ public class GeofenceActivity extends FragmentActivity {
     protected void onStart() {
         super.onStart();
         mGeofencePresenter.start();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        mGeofencePresenter.saveInstanceState(outState);
     }
 
     @Override

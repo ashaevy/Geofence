@@ -3,7 +3,6 @@ package com.ashaevy.geofence;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,7 +17,7 @@ import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 
-import java.util.ArrayList;
+import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
 
 /**
  * This class contains all helper code to setup receiving geofence transition events from
@@ -31,7 +30,8 @@ public class GeofenceHelper implements
 
     protected static final String TAG = "GeofenceHelper";
 
-    private Context mContext;
+    private final Context mContext;
+    private final GeofenceContract.Presenter mPresenter;
 
     /**
      * Provides the entry point to Google Play services.
@@ -39,44 +39,19 @@ public class GeofenceHelper implements
     protected GoogleApiClient mGoogleApiClient;
 
     /**
-     * The list of geofences used in this sample.
-     */
-    protected ArrayList<Geofence> mGeofenceList;
-
-    /**
-     * Used to keep track of whether geofences were added.
-     */
-    private boolean mGeofencesAdded;
-
-    /**
      * Used when requesting to add or remove geofences.
      */
     private PendingIntent mGeofencePendingIntent;
 
-    /**
-     * Used to persist application state about whether geofences were added.
-     */
-    private SharedPreferences mSharedPreferences;
-
-    public GeofenceHelper(Context context) {
+    public GeofenceHelper(Context context, GeofenceContract.Presenter presenter) {
         mContext = context;
+        mPresenter = presenter;
     }
 
     public void create() {
 
-        // Empty list for storing geofences.
-        mGeofenceList = new ArrayList<Geofence>();
-
         // Initially set the PendingIntent used in addGeofences() and removeGeofences() to null.
         mGeofencePendingIntent = null;
-
-        // Retrieve an instance of the SharedPreferences object.
-        mSharedPreferences = mContext.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME,
-                Context.MODE_PRIVATE);
-
-        // Get the value of mGeofencesAdded from SharedPreferences. Set to false as a default.
-        mGeofencesAdded = mSharedPreferences.getBoolean(Constants.GEOFENCES_ADDED_KEY, false);
-        setButtonsEnabledState();
 
         // Kick off the request to build GoogleApiClient.
         buildGoogleApiClient();
@@ -100,7 +75,11 @@ public class GeofenceHelper implements
             return;
         }
 
-        LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, true);
+        try {
+            LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, true);
+        } catch (SecurityException e) {
+            logSecurityException(e);
+        }
     }
 
     public void disableMockLocation() {
@@ -109,12 +88,21 @@ public class GeofenceHelper implements
             return;
         }
 
-        LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, false);
+        try {
+            LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, false);
+        } catch (SecurityException e) {
+            logSecurityException(e);
+        }
     }
 
     public void setMockLocation(Location location) {
         enableMockLocation();
-        LocationServices.FusedLocationApi.setMockLocation(mGoogleApiClient, location);
+
+        try {
+            LocationServices.FusedLocationApi.setMockLocation(mGoogleApiClient, location);
+        } catch (SecurityException e) {
+            logSecurityException(e);
+        }
     }
 
     protected void start() {
@@ -175,7 +163,7 @@ public class GeofenceHelper implements
 
                 // Set the expiration duration of the geofence. This geofence gets automatically
                 // removed after this period of time.
-                .setExpirationDuration(Constants.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+                .setExpirationDuration(NEVER_EXPIRE)
 
                 // Set the transition types of interest. Alerts are only generated for these
                 // transition. We track entry and exit transitions in this sample.
@@ -193,7 +181,7 @@ public class GeofenceHelper implements
      * Adds geofence, which sets alerts to be notified when the device enters or exits the
      * specified geofence. Handles the success or failure results returned by addGeofences().
      */
-    public void setGeofence(String requestId, LatLng point, float radius) {
+    public void addGeofence(String requestId, LatLng point, float radius) {
         if (!mGoogleApiClient.isConnected()) {
             Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
             return;
@@ -252,24 +240,10 @@ public class GeofenceHelper implements
      * @param status The Status returned through a PendingIntent when addGeofences() or
      *               removeGeofences() get called.
      */
+    @Override
     public void onResult(Status status) {
         if (status.isSuccess()) {
-            // Update state and save in shared preferences.
-            mGeofencesAdded = !mGeofencesAdded;
-            SharedPreferences.Editor editor = mSharedPreferences.edit();
-            editor.putBoolean(Constants.GEOFENCES_ADDED_KEY, mGeofencesAdded);
-            editor.apply();
-
-            // Update the UI. Adding geofences enables the Remove Geofences button, and removing
-            // geofences enables the Add Geofences button.
-            setButtonsEnabledState();
-
-            Toast.makeText(
-                    mContext,
-                    mContext.getString(mGeofencesAdded ? R.string.geofences_added :
-                            R.string.geofences_removed),
-                    Toast.LENGTH_SHORT
-            ).show();
+            mPresenter.updateGeofenceAddedState();
         } else {
             // Get the status code for the error and log it using a user-friendly message.
             String errorMessage = GeofenceErrorMessages.getErrorString(mContext,
@@ -296,12 +270,4 @@ public class GeofenceHelper implements
         return PendingIntent.getService(mContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    /**
-     * Ensures that only one button is enabled at any time. The Add Geofences button is enabled
-     * if the user hasn't yet added geofences. The Remove Geofences button is enabled if the
-     * user has added geofences.
-     */
-    private void setButtonsEnabledState() {
-        // TODO
-    }
 }
