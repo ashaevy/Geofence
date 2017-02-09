@@ -1,4 +1,4 @@
-package com.ashaevy.geofence;
+package com.ashaevy.geofence.transition;
 
 import android.app.PendingIntent;
 import android.content.Context;
@@ -8,6 +8,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.ashaevy.geofence.GeofenceContract;
+import com.ashaevy.geofence.GeofenceErrorMessages;
+import com.ashaevy.geofence.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -17,6 +20,7 @@ import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 
+import static android.net.ConnectivityManager.CONNECTIVITY_ACTION;
 import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
 
 /**
@@ -26,7 +30,7 @@ import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
 public class GooglePlayGeofenceHelper implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        ResultCallback<Status> {
+        ResultCallback<Status>, GeofenceHelper {
 
     protected static final String TAG = "GeofenceHelper";
 
@@ -48,7 +52,8 @@ public class GooglePlayGeofenceHelper implements
         mPresenter = presenter;
     }
 
-    public void create() {
+    @Override
+    public void create(Bundle savedInstanceState) {
 
         // Initially set the PendingIntent used in addGeofences() and removeGeofences() to null.
         mGeofencePendingIntent = null;
@@ -69,6 +74,7 @@ public class GooglePlayGeofenceHelper implements
                 .build();
     }
 
+    @Override
     public void enableMockLocation() {
         if (!mGoogleApiClient.isConnected()) {
             Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
@@ -82,6 +88,7 @@ public class GooglePlayGeofenceHelper implements
         }
     }
 
+    @Override
     public void disableMockLocation() {
         if (!mGoogleApiClient.isConnected()) {
             Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
@@ -95,9 +102,16 @@ public class GooglePlayGeofenceHelper implements
         }
     }
 
-    public void setMockLocation(Location location) {
-        enableMockLocation();
+    @Override
+    public void notifyAboutNetworkChange() {
+        Intent startIntent = new Intent(mContext,
+                GeofenceTransitionsIntentService.class);
+        startIntent.setAction(CONNECTIVITY_ACTION);
+        mContext.startService(startIntent);
+    }
 
+    @Override
+    public void setMockLocation(Location location) {
         try {
             LocationServices.FusedLocationApi.setMockLocation(mGoogleApiClient, location);
         } catch (SecurityException e) {
@@ -105,12 +119,25 @@ public class GooglePlayGeofenceHelper implements
         }
     }
 
-    protected void start() {
+    @Override
+    public void start() {
         mGoogleApiClient.connect();
     }
 
-    protected void stop() {
+    @Override
+    public void saveInstanceState(Bundle outState) {
+
+    }
+
+    @Override
+    public void stop() {
         mGoogleApiClient.disconnect();
+    }
+
+    @Override
+    public void addGeofence(LatLng position, double radius) {
+        addGeofence("GEOFENCE_CIRCLE",
+                position, ((float) radius));
     }
 
     /**
@@ -207,6 +234,7 @@ public class GooglePlayGeofenceHelper implements
      * Removes geofences, which stops further notifications when the device enters or exits
      * previously registered geofences.
      */
+    @Override
     public void removeGeofence() {
         if (!mGoogleApiClient.isConnected()) {
             Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();

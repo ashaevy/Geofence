@@ -42,4 +42,6 @@
 
     <string name="validation_error">Invalid input. Coordinates and radius must be double and WiFi name should not be empty!</string>
     <string name="validation_error_dialog_title">Error!</string>
+
+    <string name="location_updated_message">Location updated</string>
 </resources>

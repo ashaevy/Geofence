@@ -104,6 +104,15 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
                 getZoomLevel(mGeofenceCircle.circle)));
 
         setupUsageOfMockLocation();
+        //setupMyLocation();
+    }
+
+    private void setupMyLocation() {
+        try {
+            mMap.setMyLocationEnabled(true);
+        } catch (SecurityException e) {
+            Log.e(TAG, "Can't setup mock location.");
+        }
     }
 
     private void setupUsageOfMockLocation() {

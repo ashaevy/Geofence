@@ -1,17 +1,20 @@
-package com.ashaevy.geofence;
+package com.ashaevy.geofence.transition;
 
 import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 
+import com.ashaevy.geofence.Constants;
+import com.ashaevy.geofence.NetworkUtils;
 import com.ashaevy.geofence.data.GeofenceData;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
 import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
 import com.google.android.gms.location.Geofence;
 
 /**
- * Created by ashaevy on 09.02.17.
+ * Class that contains logic of detection Geofence transitions.
  */
 
 public class GeofenceTransitionDetector {
@@ -47,6 +50,23 @@ public class GeofenceTransitionDetector {
         Intent updateIntent = new Intent(GEOFENCE_UPDATED);
         updateIntent.putExtra(KEY_GEOFENCE_UPDATE_TYPE, geofenceState);
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(updateIntent);
+    }
+
+    /**
+     * Provides last possible transition based on location and geofenceData.
+     *
+     * @return Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT
+     */
+    public int geofenceCoordinatesTransition(GeofenceData geofenceData, Location location) {
+        float[] results = new float[1];
+        Location.distanceBetween(geofenceData.getLatitude(), geofenceData.getLongitude(),
+                location.getLatitude(), location.getLongitude(), results);
+        float distanceInMeters = results[0];
+        if (distanceInMeters <= geofenceData.getRadius()) {
+            return Geofence.GEOFENCE_TRANSITION_ENTER;
+        } else {
+            return Geofence.GEOFENCE_TRANSITION_EXIT;
+        }
     }
 
 }

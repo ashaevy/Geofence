@@ -6,13 +6,13 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.ashaevy.geofence.data.GeofenceData;
-import com.google.android.gms.location.Geofence;
 
 public class ControlsFragment extends Fragment implements GeofenceContract.ControlsView {
 
@@ -25,6 +25,8 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
     private TextInputEditText mWiFiNameInput;
     private View mStartGeofencingButton;
     private View mStopGeofencingButton;
+    private View mSetCurrentWiFiButton;
+    private InputWatcher mTextWatcher = new InputWatcher();
 
     public ControlsFragment() {
         // Required empty public constructor
@@ -42,6 +44,25 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         return new ControlsFragment();
     }
 
+    private class InputWatcher implements TextWatcher {
+        @Override
+        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable editable) {
+            tryUpdatePresenterData(false);
+        }
+
+
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -50,24 +71,16 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
 
         mStartGeofencingButton = view.findViewById(R.id.start_geofencing);
         mStopGeofencingButton = view.findViewById(R.id.stop_geofencing);
+        mSetCurrentWiFiButton = view.findViewById(R.id.button_set_current_wifi);
 
         mPointXInput = (TextInputEditText) view.findViewById(R.id.input_point_x);
         mPointYInput = ((TextInputEditText) view.findViewById(R.id.input_point_y));
         mRadiusInput = ((TextInputEditText) view.findViewById(R.id.input_radius));
         mWiFiNameInput = ((TextInputEditText) view.findViewById(R.id.input_wifi_name));
 
-        View.OnFocusChangeListener onFocusChangeListener = new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean b) {
-                tryUpdatePresenterData(false);
-            }
-        };
-        mPointXInput.setOnFocusChangeListener(onFocusChangeListener);
-        mPointYInput.setOnFocusChangeListener(onFocusChangeListener);
-        mRadiusInput.setOnFocusChangeListener(onFocusChangeListener);
-        mWiFiNameInput.setOnFocusChangeListener(onFocusChangeListener);
+        registerTextWatcher();
 
-        view.findViewById(R.id.button_set_current_wifi).setOnClickListener(new View.OnClickListener() {
+        mSetCurrentWiFiButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mPresenter.setCurrentWiFi();
@@ -100,12 +113,30 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         return view;
     }
 
+    private void registerTextWatcher() {
+        mPointXInput.addTextChangedListener(mTextWatcher);
+        mPointYInput.addTextChangedListener(mTextWatcher);
+        mRadiusInput.addTextChangedListener(mTextWatcher);
+        mWiFiNameInput.addTextChangedListener(mTextWatcher);
+    }
+
+    private void unregisterTextWatcher() {
+        mPointXInput.removeTextChangedListener(mTextWatcher);
+        mPointYInput.removeTextChangedListener(mTextWatcher);
+        mRadiusInput.removeTextChangedListener(mTextWatcher);
+        mWiFiNameInput.removeTextChangedListener(mTextWatcher);
+    }
+
     @Override
     public void updateGeofence(GeofenceData geofenceData) {
+        unregisterTextWatcher();
+
         mPointXInput.setText(String.valueOf(geofenceData.getLatitude()));
         mPointYInput.setText(String.valueOf(geofenceData.getLongitude()));
         mRadiusInput.setText(String.valueOf(geofenceData.getRadius()));
         mWiFiNameInput.setText(geofenceData.getWifiName());
+
+        registerTextWatcher();
     }
 
     @Override
@@ -133,6 +164,7 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         mWiFiNameInput.setEnabled(!started);
 
         mStartGeofencingButton.setEnabled(!started);
+        mSetCurrentWiFiButton.setEnabled(!started);
         mStopGeofencingButton.setEnabled(started);
     }
 
