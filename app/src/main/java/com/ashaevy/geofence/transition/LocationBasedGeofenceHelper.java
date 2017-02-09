@@ -1,16 +1,21 @@
 package com.ashaevy.geofence.transition;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.widget.Toast;
 
+import com.ashaevy.geofence.Constants;
 import com.ashaevy.geofence.GeofenceContract;
-import com.ashaevy.geofence.R;
 import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -41,7 +46,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
 
     // Keys for storing activity state in the Bundle.
-    protected final static String REQUESTING_LOCATION_UPDATES_KEY = "requesting-location-updates-key";
     protected final static String LOCATION_KEY = "location-key";
     protected final static String LAST_UPDATED_TIME_STRING_KEY = "last-updated-time-string-key";
 
@@ -66,12 +70,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
     protected Location mCurrentLocation;
 
     /**
-     * Tracks the status of the location updates request. Value changes when the user presses the
-     * Start Updates and Stop Updates buttons.
-     */
-    protected Boolean mRequestingLocationUpdates;
-
-    /**
      * Time when the location was updated represented as a String.
      */
     protected String mLastUpdateTime;
@@ -85,9 +83,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
 
     @Override
     public void create(Bundle savedInstanceState) {
-        mRequestingLocationUpdates = false;
-        mLastUpdateTime = "";
-
         // Update values using data stored in the Bundle.
         updateValuesFromBundle(savedInstanceState);
 
@@ -108,18 +103,15 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
 
     @Override
     public void addGeofence(LatLng position, double radius) {
-        if (!mRequestingLocationUpdates) {
-            mPresenter.updateGeofenceAddedState();
-            mRequestingLocationUpdates = true;
+        if (!mPresenter.geofenceAdded()) {
             startLocationUpdates();
         }
     }
 
     @Override
     public void removeGeofence() {
-        if (mRequestingLocationUpdates) {
-            mPresenter.updateGeofenceAddedState();
-            mRequestingLocationUpdates = false;
+        if (mPresenter.geofenceAdded()) {
+            mPresenter.updateGeofenceAddedState(false);
             stopLocationUpdates();
         }
     }
@@ -134,11 +126,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
     }
 
     public void enableMockLocation() {
-        if (!mGoogleApiClient.isConnected()) {
-            Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         try {
             LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, true);
         } catch (SecurityException e) {
@@ -148,11 +135,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
 
     @Override
     public void disableMockLocation() {
-        if (!mGoogleApiClient.isConnected()) {
-            Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         try {
             LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, false);
         } catch (SecurityException e) {
@@ -162,9 +144,7 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
 
     @Override
     public void notifyAboutNetworkChange() {
-        if (mCurrentLocation != null) {
-            updateGeofenceTransitionState();
-        }
+        updateGeofenceTransitionState();
     }
 
     /**
@@ -175,13 +155,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
     private void updateValuesFromBundle(Bundle savedInstanceState) {
         Log.i(TAG, "Updating values from bundle");
         if (savedInstanceState != null) {
-            // Update the value of mRequestingLocationUpdates from the Bundle, and make sure that
-            // the Start Updates and Stop Updates buttons are correctly enabled or disabled.
-            if (savedInstanceState.keySet().contains(REQUESTING_LOCATION_UPDATES_KEY)) {
-                mRequestingLocationUpdates = savedInstanceState.getBoolean(
-                        REQUESTING_LOCATION_UPDATES_KEY);
-            }
-
             // Update the value of mCurrentLocation from the Bundle and update the UI to show the
             // correct latitude and longitude.
             if (savedInstanceState.keySet().contains(LOCATION_KEY)) {
@@ -194,6 +167,7 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
             if (savedInstanceState.keySet().contains(LAST_UPDATED_TIME_STRING_KEY)) {
                 mLastUpdateTime = savedInstanceState.getString(LAST_UPDATED_TIME_STRING_KEY);
             }
+
             updateGeofenceTransitionState();
         }
     }
@@ -245,25 +219,39 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
      * Requests location updates from the FusedLocationApi.
      */
     protected void startLocationUpdates() {
-        try {
-            // The final argument to {@code requestLocationUpdates()} is a LocationListener
-            // (http://developer.android.com/reference/com/google/android/gms/location/LocationListener.html).
-            LocationServices.FusedLocationApi.requestLocationUpdates(
-                    mGoogleApiClient, mLocationRequest, this);
-        } catch (SecurityException e) {
-            logSecurityException(e);
-        }
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
 
+            // try to init current location
+            if (mCurrentLocation == null) {
+                mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+                mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+                updateGeofenceTransitionState();
+            }
+
+            LocationServices.FusedLocationApi.requestLocationUpdates(
+                    mGoogleApiClient, mLocationRequest, this).setResultCallback(
+                    new ResultCallback<Status>() {
+                @Override
+                public void onResult(@NonNull Status status) {
+                    mPresenter.updateGeofenceAddedState(status.isSuccess());
+                }
+            });
+        } else {
+            mPresenter.reportPermissionError(Constants.LOCATION_PERMISSION_REQUEST_CODE);
+        }
     }
 
     /**
      * Updates the latitude, the longitude, and the last location time in the UI.
      */
     private void updateGeofenceTransitionState() {
-        int geofenceTransition = mGeofenceTransitionDetector.
-                geofenceCoordinatesTransition(mPresenter.getGeofenceData(), mCurrentLocation);
-        mDataSource.saveGeofenceTransition(geofenceTransition);
-        mGeofenceTransitionDetector.detectTransition();
+        if (mCurrentLocation != null) {
+            int geofenceTransition = mGeofenceTransitionDetector.
+                    geofenceCoordinatesTransition(mPresenter.getGeofenceData(), mCurrentLocation);
+            mDataSource.saveGeofenceTransition(geofenceTransition);
+            mGeofenceTransitionDetector.detectTransition();
+        }
     }
 
     /**
@@ -286,31 +274,11 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
     public void onConnected(Bundle connectionHint) {
         Log.i(TAG, "Connected to GoogleApiClient");
 
-        try {
-            // If the initial location was never previously requested, we use
-            // FusedLocationApi.getLastLocation() to get it. If it was previously requested, we store
-            // its value in the Bundle and check for it in onCreate(). We
-            // do not request it again unless the user specifically requests location updates by pressing
-            // the Start Updates button.
-            //
-            // Because we cache the value of the initial location in the Bundle, it means that if the
-            // user launches the activity,
-            // moves to a new location, and then changes the device orientation, the original location
-            // is displayed as the activity is re-created.
-            if (mCurrentLocation == null) {
-                mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-                mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-                updateGeofenceTransitionState();
-            }
-
-            // If the user presses the Start Updates button before GoogleApiClient connects, we set
-            // mRequestingLocationUpdates to true (see startUpdatesButtonHandler()). Here, we check
-            // the value of mRequestingLocationUpdates and if it is true, we start location updates.
-            if (mRequestingLocationUpdates) {
-                startLocationUpdates();
-            }
-        } catch (SecurityException e) {
-            logSecurityException(e);
+        // If the user presses the Start Updates button before GoogleApiClient connects, we set
+        // mRequestingLocationUpdates to true (see startUpdatesButtonHandler()). Here, we check
+        // the value of mRequestingLocationUpdates and if it is true, we start location updates.
+        if (mPresenter.geofenceAdded()) {
+            startLocationUpdates();
         }
     }
 
@@ -322,8 +290,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
         mCurrentLocation = location;
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
         updateGeofenceTransitionState();
-        Toast.makeText(mContext, mContext.getResources().getString(R.string.location_updated_message),
-                Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -347,14 +313,12 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
      */
     @Override
     public void saveInstanceState (Bundle savedInstanceState) {
-        savedInstanceState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY, mRequestingLocationUpdates);
         savedInstanceState.putParcelable(LOCATION_KEY, mCurrentLocation);
         savedInstanceState.putString(LAST_UPDATED_TIME_STRING_KEY, mLastUpdateTime);
     }
 
     private void logSecurityException(SecurityException securityException) {
-        Log.e(TAG, "Invalid location permission. " +
-                "You need to use ACCESS_FINE_LOCATION with geofences", securityException);
+        Log.e(TAG, "Invalid permission.", securityException);
     }
 
 }

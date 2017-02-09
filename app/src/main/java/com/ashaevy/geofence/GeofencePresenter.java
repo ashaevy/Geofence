@@ -9,7 +9,6 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
-import android.widget.Toast;
 
 import com.ashaevy.geofence.data.GeofenceData;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
@@ -17,6 +16,7 @@ import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
 import com.ashaevy.geofence.transition.GeofenceHelper;
 import com.ashaevy.geofence.transition.GeofenceTransitionDetector;
 import com.ashaevy.geofence.transition.LocationBasedGeofenceHelper;
+import com.ashaevy.geofence.utils.NetworkUtils;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.Date;
@@ -32,6 +32,7 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     private final GeofenceContract.MapView mMapView;
     private final GeofenceContract.ControlsView mControlsView;
+    private final GeofenceContract.DialogsView mDialogsView;
 
     private final GeofenceHelper mGeofenceHelper;
 
@@ -44,21 +45,23 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     private String KEY_WIFI = "KEY_WIFI";
     private String KEY_GEOFENCE_STATE = "KEY_GEOFENCE_STATE";
 
-    private boolean mGeofencesAdded;
+    private boolean mGeofenceAdded;
     private final GeofenceDataSource mGeofenceDataSource;
 
     private NetworkReceiver mNetworkUpdateReceiver;
 
     public GeofencePresenter(Context context, GeofenceContract.MapView mapView,
-                             GeofenceContract.ControlsView controlsView, Bundle savedInstanceState) {
+                             GeofenceContract.ControlsView controlsView,
+                             GeofenceContract.DialogsView dialogsView, Bundle savedInstanceState) {
         mMapView = mapView;
         mControlsView = controlsView;
+        mDialogsView = dialogsView;
         mContext = context;
 
         mGeofenceDataSource = new SPGeofenceDataSource(mContext);
 
-        mGeofencesAdded = mGeofenceDataSource.geofenceAdded();
-        setGeofenceAdded(mGeofencesAdded);
+        mGeofenceAdded = mGeofenceDataSource.geofenceAdded();
+        updateGeofenceAddedUIState(mGeofenceAdded);
 
 
         mCurrentGeofenceData = new GeofenceData();
@@ -80,7 +83,6 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
         mCurrentGeofenceState = Constants.GEOFENCE_STATE_UNKNOWN;
 
-//        mGeofenceHelper = new GooglePlayGeofenceHelper(context, this);
         mGeofenceHelper = new LocationBasedGeofenceHelper(context, this);
         mGeofenceHelper.create(savedInstanceState);
 
@@ -100,7 +102,7 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         filter.addAction(GeofenceTransitionDetector.GEOFENCE_UPDATED);
         LocalBroadcastManager.getInstance(mContext).registerReceiver(mGeofenceUpdateReceiver,
                 filter);
-        if (mGeofencesAdded) {
+        if (mGeofenceAdded) {
             registerNetworkReceiver();
         }
         mGeofenceHelper.start();
@@ -138,7 +140,6 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     @Override
     public void startGeofencing() {
-        mGeofenceHelper.enableMockLocation();
         LatLng position = new LatLng(mCurrentGeofenceData.getLatitude(),
                 mCurrentGeofenceData.getLongitude());
         mGeofenceHelper.addGeofence(position, mCurrentGeofenceData.getRadius());
@@ -146,16 +147,13 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         mGeofenceDataSource.saveGeofenceData(mCurrentGeofenceData);
     }
 
-    private void setGeofenceAdded(boolean added) {
-        mGeofencesAdded = added;
-
+    private void updateGeofenceAddedUIState(boolean added) {
         mControlsView.setGeofencingStarted(added);
         mMapView.setGeofencingStarted(added);
     }
 
     @Override
     public void stopGeofencing() {
-        mGeofenceHelper.disableMockLocation();
         mGeofenceHelper.removeGeofence();
         mCurrentGeofenceState = Constants.GEOFENCE_STATE_UNKNOWN;
         mControlsView.setGeofenceState(Constants.GEOFENCE_STATE_UNKNOWN);
@@ -208,16 +206,18 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     private BroadcastReceiver mGeofenceUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            mCurrentGeofenceState = intent.getIntExtra(GeofenceTransitionDetector.
-                    KEY_GEOFENCE_UPDATE_TYPE, Constants.GEOFENCE_STATE_UNKNOWN);
-            mControlsView.setGeofenceState(mCurrentGeofenceState);
+            if (mGeofenceAdded) {
+                mCurrentGeofenceState = intent.getIntExtra(GeofenceTransitionDetector.
+                        KEY_GEOFENCE_UPDATE_TYPE, Constants.GEOFENCE_STATE_UNKNOWN);
+                mControlsView.setGeofenceState(mCurrentGeofenceState);
+            }
         }
     };
 
     private class NetworkReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (CONNECTIVITY_ACTION.equals(intent.getAction()) && mGeofencesAdded) {
+            if (CONNECTIVITY_ACTION.equals(intent.getAction()) && mGeofenceAdded) {
                 mGeofenceHelper.notifyAboutNetworkChange();
             }
         }
@@ -236,23 +236,28 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     }
 
     @Override
-    public void updateGeofenceAddedState() {
-        // Update state and save in shared preferences.
-        setGeofenceAdded(!mGeofencesAdded);
+    public void updateGeofenceAddedState(boolean geofenceAdded) {
+        mGeofenceAdded = geofenceAdded;
+        updateGeofenceAddedUIState(geofenceAdded);
 
-        if (mGeofencesAdded) {
+        if (mGeofenceAdded) {
             registerNetworkReceiver();
         } else {
             unregisterReceiver();
         }
 
-        mGeofenceDataSource.saveGeofenceAdded(mGeofencesAdded);
-
-        Toast.makeText(
-                mContext,
-                mContext.getString(mGeofencesAdded ? R.string.geofences_added :
-                        R.string.geofences_removed),
-                Toast.LENGTH_SHORT
-        ).show();
+        mGeofenceDataSource.saveGeofenceAdded(mGeofenceAdded);
     }
+
+    @Override
+    public boolean geofenceAdded() {
+        return mGeofenceAdded;
+    }
+
+    @Override
+    public void reportPermissionError(int requestId) {
+        updateGeofenceAddedState(false);
+        mDialogsView.requestLocationPermission(requestId);
+    }
+
 }

@@ -9,7 +9,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.ashaevy.geofence.GeofenceContract;
-import com.ashaevy.geofence.GeofenceErrorMessages;
 import com.ashaevy.geofence.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -271,7 +270,7 @@ public class GooglePlayGeofenceHelper implements
     @Override
     public void onResult(Status status) {
         if (status.isSuccess()) {
-            mPresenter.updateGeofenceAddedState();
+            mPresenter.updateGeofenceAddedState(!mPresenter.geofenceAdded());
         } else {
             // Get the status code for the error and log it using a user-friendly message.
             String errorMessage = GeofenceErrorMessages.getErrorString(mContext,

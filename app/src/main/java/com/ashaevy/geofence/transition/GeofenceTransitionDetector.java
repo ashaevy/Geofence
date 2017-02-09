@@ -7,7 +7,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 
 import com.ashaevy.geofence.Constants;
-import com.ashaevy.geofence.NetworkUtils;
+import com.ashaevy.geofence.utils.NetworkUtils;
 import com.ashaevy.geofence.data.GeofenceData;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
 import com.ashaevy.geofence.data.source.SPGeofenceDataSource;

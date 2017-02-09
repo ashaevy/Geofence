@@ -32,6 +32,11 @@ public interface GeofenceContract {
 
     }
 
+    interface DialogsView {
+
+        void requestLocationPermission(int requestId);
+    }
+
     interface Presenter {
 
         void start();
@@ -54,7 +59,11 @@ public interface GeofenceContract {
 
         void saveInstanceState(Bundle outState);
 
-        void updateGeofenceAddedState();
+        void updateGeofenceAddedState(boolean geofencesAdded);
+
+        boolean geofenceAdded();
+
+        void reportPermissionError(int requestId);
     }
 
 }

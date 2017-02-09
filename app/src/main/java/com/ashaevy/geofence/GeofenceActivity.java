@@ -1,12 +1,12 @@
 package com.ashaevy.geofence;
 
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AppCompatActivity;
 
 /**
  * Main activity.
  */
-public class GeofenceActivity extends FragmentActivity {
+public class GeofenceActivity extends AppCompatActivity {
 
     private GeofencePresenter mGeofencePresenter;
 
@@ -20,7 +20,16 @@ public class GeofenceActivity extends FragmentActivity {
         GeofenceContract.ControlsView controlsView = ((GeofenceContract.ControlsView)
                 getSupportFragmentManager().findFragmentById(R.id.controls));
 
-        mGeofencePresenter = new GeofencePresenter(this, mapView, controlsView, savedInstanceState);
+        DialogsFragment dialogsFragment = ((DialogsFragment) getSupportFragmentManager().
+                findFragmentByTag(Constants.DIALOGS_FRAGMENT_TAG));
+        if (dialogsFragment == null) {
+            dialogsFragment = new DialogsFragment();
+            getSupportFragmentManager().beginTransaction().add(dialogsFragment,
+                    Constants.DIALOGS_FRAGMENT_TAG).commit();
+        }
+
+        mGeofencePresenter = new GeofencePresenter(this, mapView, controlsView,
+                dialogsFragment, savedInstanceState);
 
     }
 

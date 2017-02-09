@@ -1,11 +1,14 @@
 package com.ashaevy.geofence;
 
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.ashaevy.geofence.data.GeofenceData;
+import com.ashaevy.geofence.utils.SphericalUtil;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
@@ -15,6 +18,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -22,16 +26,19 @@ import com.google.android.gms.maps.model.MarkerOptions;
  * Google Map Fragment that shows draggable and resizable circle.
  */
 public class GeofenceMapFragment extends SupportMapFragment implements GeofenceContract.MapView,
-        OnMapReadyCallback, GoogleMap.OnMarkerDragListener {
+        OnMapReadyCallback, GoogleMap.OnMarkerDragListener, GoogleMap.OnMapLoadedCallback {
 
     private static final String TAG = "GeofenceMapFragment";
 
     private static final float DEFAULT_STROKE_WIDTH = 2;
     private static final int DEFAULT_FILL_COLOR = Color.parseColor("#4de95367");
     private static final int DEFAULT_STROKE_COLOR = Color.BLACK;
+    private static final int CIRCLE_PADDING_PX = 30;
 
     private GoogleMap mMap;
     private DraggableCircle mGeofenceCircle;
+    private boolean requestRescaleFlag;
+    private boolean mapLoaded;
 
     private GeofenceContract.Presenter mPresenter;
 
@@ -40,8 +47,7 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
         if (mGeofenceCircle != null) {
             LatLng position = new LatLng(geofenceData.getLatitude(), geofenceData.getLongitude());
             mGeofenceCircle.updateCircleParams(position, geofenceData.getRadius());
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position,
-                    getZoomLevel(mGeofenceCircle.circle)));
+            requestRescale();
         }
     }
 
@@ -54,6 +60,24 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
     public void setGeofencingStarted(boolean started) {
         if (mMap != null) {
             mGeofenceCircle.setEditable(!started);
+        }
+    }
+
+    @Override
+    public void onMapLoaded() {
+        mapLoaded = true;
+        if (requestRescaleFlag) {
+            requestRescaleFlag = false;
+            requestRescale();
+        }
+    }
+
+    private void requestRescale() {
+        if (!mapLoaded) {
+            requestRescaleFlag = true;
+        } else {
+            mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(calculateBounds(mGeofenceCircle.
+                    centerMarker.getPosition(), mGeofenceCircle.radius), CIRCLE_PADDING_PX));
         }
     }
 
@@ -96,22 +120,25 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
         mMap = googleMap;
 
         mMap.setOnMarkerDragListener(this);
+        mMap.setOnMapLoadedCallback(this);
 
         GeofenceData geofenceData = mPresenter.getGeofenceData();
         LatLng center = new LatLng(geofenceData.getLatitude(), geofenceData.getLongitude());
         mGeofenceCircle = new DraggableCircle(center, geofenceData.getRadius(), true);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center,
-                getZoomLevel(mGeofenceCircle.circle)));
+        mapLoaded = false;
+        requestRescaleFlag = true;
 
-        setupUsageOfMockLocation();
-        //setupMyLocation();
+        //setupUsageOfMockLocation();
+        setupMyLocation();
     }
 
     private void setupMyLocation() {
-        try {
+        if (ContextCompat.checkSelfPermission(getActivity(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
-        } catch (SecurityException e) {
-            Log.e(TAG, "Can't setup mock location.");
+        } else {
+            mPresenter.reportPermissionError(Constants.LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
 
@@ -153,14 +180,12 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
         mPresenter.updateGeofenceFromMap(geofenceData);
     }
 
-    private int getZoomLevel(Circle circle) {
-        int zoomLevel = 11;
-        if (circle != null) {
-            double radius = circle.getRadius() + circle.getRadius() / 2;
-            double scale = radius / 500;
-            zoomLevel = (int) (16 - Math.log(scale) / Math.log(2));
-        }
-        return zoomLevel;
+    private LatLngBounds calculateBounds(LatLng center, double radius) {
+        return new LatLngBounds.Builder().
+                include(SphericalUtil.computeOffset(center, radius, 0)).
+                include(SphericalUtil.computeOffset(center, radius, 90)).
+                include(SphericalUtil.computeOffset(center, radius, 180)).
+                include(SphericalUtil.computeOffset(center, radius, 270)).build();
     }
 
     @Override

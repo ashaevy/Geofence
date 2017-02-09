@@ -1,8 +1,9 @@
-package com.ashaevy.geofence;
+package com.ashaevy.geofence.transition;
 
 import android.content.Context;
 import android.content.res.Resources;
 
+import com.ashaevy.geofence.R;
 import com.google.android.gms.location.GeofenceStatusCodes;
 
 /**

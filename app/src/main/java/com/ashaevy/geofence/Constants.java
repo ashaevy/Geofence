@@ -28,4 +28,10 @@ public final class Constants {
     public static final int GEOFENCE_STATE_INSIDE = 1;
     public static final int GEOFENCE_STATE_OUTSIDE = 2;
 
+    public static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+
+    public static String DIALOGS_FRAGMENT_TAG = "DIALOGS_FRAGMENT_TAG";
+    public static String PERMISSION_DIALOG_FRAGMENT_TAG = "PERMISSION_DIALOG_FRAGMENT_TAG";
+    public static final String PERMISSION_DENIED_DIALOG_FRAGMENT_TAG = "PERMISSION_DENIED_DIALOG_FRAGMENT_TAG";
+
 }

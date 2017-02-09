@@ -1,4 +1,4 @@
-package com.ashaevy.geofence;
+package com.ashaevy.geofence.utils;
 
 import android.content.Context;
 import android.net.ConnectivityManager;

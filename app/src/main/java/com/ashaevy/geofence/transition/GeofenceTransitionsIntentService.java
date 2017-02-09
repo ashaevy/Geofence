@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.util.Log;
 
-import com.ashaevy.geofence.GeofenceErrorMessages;
 import com.ashaevy.geofence.R;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
 import com.ashaevy.geofence.data.source.SPGeofenceDataSource;

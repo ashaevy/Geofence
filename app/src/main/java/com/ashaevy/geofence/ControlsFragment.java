@@ -28,6 +28,8 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
     private View mSetCurrentWiFiButton;
     private InputWatcher mTextWatcher = new InputWatcher();
 
+    private boolean isResumed = false;
+
     public ControlsFragment() {
         // Required empty public constructor
     }
@@ -57,7 +59,10 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
 
         @Override
         public void afterTextChanged(Editable editable) {
-            tryUpdatePresenterData(false);
+            // to avoid updating data when text field is restored from saved state
+            if (isResumed) {
+                tryUpdatePresenterData(false);
+            }
         }
 
 
@@ -77,8 +82,6 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         mPointYInput = ((TextInputEditText) view.findViewById(R.id.input_point_y));
         mRadiusInput = ((TextInputEditText) view.findViewById(R.id.input_radius));
         mWiFiNameInput = ((TextInputEditText) view.findViewById(R.id.input_wifi_name));
-
-        registerTextWatcher();
 
         mSetCurrentWiFiButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -111,6 +114,18 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         });
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        isResumed = true;
+    }
+
+    @Override
+    public void onPause() {
+        isResumed = false;
+        super.onPause();
     }
 
     private void registerTextWatcher() {
