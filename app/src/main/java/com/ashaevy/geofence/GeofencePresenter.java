@@ -17,6 +17,7 @@ import com.ashaevy.geofence.transition.GeofenceHelper;
 import com.ashaevy.geofence.transition.GeofenceTransitionDetector;
 import com.ashaevy.geofence.transition.LocationBasedGeofenceHelper;
 import com.ashaevy.geofence.utils.NetworkUtils;
+import com.google.android.gms.location.Geofence;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.Date;
@@ -140,11 +141,13 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     @Override
     public void startGeofencing() {
+        // start from outsize position as first trigger event is entering
+        mGeofenceDataSource.saveGeofenceTransition(Geofence.GEOFENCE_TRANSITION_EXIT);
+        mGeofenceDataSource.saveGeofenceData(mCurrentGeofenceData);
+
         LatLng position = new LatLng(mCurrentGeofenceData.getLatitude(),
                 mCurrentGeofenceData.getLongitude());
         mGeofenceHelper.addGeofence(position, mCurrentGeofenceData.getRadius());
-
-        mGeofenceDataSource.saveGeofenceData(mCurrentGeofenceData);
     }
 
     private void updateGeofenceAddedUIState(boolean added) {

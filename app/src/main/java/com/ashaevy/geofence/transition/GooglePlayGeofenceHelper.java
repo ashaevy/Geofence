@@ -1,13 +1,17 @@
 package com.ashaevy.geofence.transition;
 
+import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.ashaevy.geofence.Constants;
 import com.ashaevy.geofence.GeofenceContract;
 import com.ashaevy.geofence.R;
 import com.google.android.gms.common.ConnectionResult;
@@ -32,6 +36,7 @@ public class GooglePlayGeofenceHelper implements
         ResultCallback<Status>, GeofenceHelper {
 
     protected static final String TAG = "GeofenceHelper";
+    public static final String DEFAULT_GEOFENCE_NAME = "GEOFENCE_CIRCLE";
 
     private final Context mContext;
     private final GeofenceContract.Presenter mPresenter;
@@ -75,11 +80,6 @@ public class GooglePlayGeofenceHelper implements
 
     @Override
     public void enableMockLocation() {
-        if (!mGoogleApiClient.isConnected()) {
-            Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         try {
             LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, true);
         } catch (SecurityException e) {
@@ -89,11 +89,6 @@ public class GooglePlayGeofenceHelper implements
 
     @Override
     public void disableMockLocation() {
-        if (!mGoogleApiClient.isConnected()) {
-            Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         try {
             LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, false);
         } catch (SecurityException e) {
@@ -135,7 +130,7 @@ public class GooglePlayGeofenceHelper implements
 
     @Override
     public void addGeofence(LatLng position, double radius) {
-        addGeofence("GEOFENCE_CIRCLE",
+        addGeofence(DEFAULT_GEOFENCE_NAME,
                 position, ((float) radius));
     }
 
@@ -213,7 +208,8 @@ public class GooglePlayGeofenceHelper implements
             return;
         }
 
-        try {
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
             LocationServices.GeofencingApi.addGeofences(
                     mGoogleApiClient,
                     // The GeofenceRequest object.
@@ -223,9 +219,8 @@ public class GooglePlayGeofenceHelper implements
                     // transition is observed.
                     getGeofencePendingIntent()
             ).setResultCallback(this); // Result processed in onResult().
-        } catch (SecurityException securityException) {
-            // Catch exception generated if the app does not use ACCESS_FINE_LOCATION permission.
-            logSecurityException(securityException);
+        } else {
+            mPresenter.reportPermissionError(Constants.LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
 
@@ -239,17 +234,19 @@ public class GooglePlayGeofenceHelper implements
             Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
             return;
         }
-        try {
+
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
             // Remove geofences.
             LocationServices.GeofencingApi.removeGeofences(
                     mGoogleApiClient,
                     // This is the same pending intent that was used in addGeofences().
                     getGeofencePendingIntent()
             ).setResultCallback(this); // Result processed in onResult().
-        } catch (SecurityException securityException) {
-            // Catch exception generated if the app does not use ACCESS_FINE_LOCATION permission.
-            logSecurityException(securityException);
+        } else {
+            mPresenter.reportPermissionError(Constants.LOCATION_PERMISSION_REQUEST_CODE);
         }
+
     }
 
     private void logSecurityException(SecurityException securityException) {
