@@ -7,7 +7,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 
 import com.ashaevy.geofence.Constants;
-import com.ashaevy.geofence.Injection;
 import com.ashaevy.geofence.utils.NetworkUtils;
 import com.ashaevy.geofence.data.GeofenceData;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
@@ -22,22 +21,35 @@ public class GeofenceTransitionDetector {
     public static final String GEOFENCE_UPDATED = GeofenceTransitionsIntentService.class.getName() + ".GEOFENCE_UPDATED";
     public static final String KEY_GEOFENCE_UPDATE_TYPE = "KEY_GEOFENCE_UPDATE_TYPE";
 
-    private Context mContext;
+    private GeofenceDataSource mGeofenceDataSource;
 
-    public GeofenceTransitionDetector(Context context) {
-        mContext = context;
+    public GeofenceTransitionDetector(GeofenceDataSource geofenceDataSource) {
+        mGeofenceDataSource = geofenceDataSource;
     }
 
-    public void detectTransition() {
+    public void detectTransition(final Context context) {
+        detectTransition(context, new SsidProvider() {
+            @Override
+            public String getSsid() {
+                return NetworkUtils.getCurrentSsid(context);
+            }
+        });
+    }
+
+    void detectTransition(Context context, SsidProvider ssidProvider) {
+        Intent updateIntent = new Intent(GEOFENCE_UPDATED);
+        updateIntent.putExtra(KEY_GEOFENCE_UPDATE_TYPE, detectTransitionState(ssidProvider));
+        LocalBroadcastManager.getInstance(context).sendBroadcast(updateIntent);
+    }
+
+    int detectTransitionState(SsidProvider ssidProvider) {
         int geofenceState = Constants.GEOFENCE_STATE_UNKNOWN;
-        GeofenceDataSource dataSource = Injection.provideGeofenceDataSource(mContext);
+        int geofenceTransition = mGeofenceDataSource.readGeofenceTransition();
 
-        int geofenceTransition = dataSource.readGeofenceTransition();
-
-        GeofenceData geofenceData = dataSource.readGeofenceData();
+        GeofenceData geofenceData = mGeofenceDataSource.readGeofenceData();
         if (geofenceData != null) {
             String wifiName = geofenceData.getWifiName();
-            String currentSsid = NetworkUtils.getCurrentSsid(mContext);
+            String currentSsid = ssidProvider.getSsid();
             if ((!TextUtils.isEmpty(wifiName) && wifiName.equals(currentSsid)) ||
                     (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER)) {
                 geofenceState = Constants.GEOFENCE_STATE_INSIDE;
@@ -45,11 +57,7 @@ public class GeofenceTransitionDetector {
                 geofenceState = Constants.GEOFENCE_STATE_OUTSIDE;
             }
         }
-
-        // Send broadcast
-        Intent updateIntent = new Intent(GEOFENCE_UPDATED);
-        updateIntent.putExtra(KEY_GEOFENCE_UPDATE_TYPE, geofenceState);
-        LocalBroadcastManager.getInstance(mContext).sendBroadcast(updateIntent);
+        return geofenceState;
     }
 
     /**
@@ -57,7 +65,7 @@ public class GeofenceTransitionDetector {
      *
      * @return Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT
      */
-    public int geofenceCoordinatesTransition(GeofenceData geofenceData, Location location) {
+    int geofenceCoordinatesTransition(GeofenceData geofenceData, Location location) {
         float[] results = new float[1];
         Location.distanceBetween(geofenceData.getLatitude(), geofenceData.getLongitude(),
                 location.getLatitude(), location.getLongitude(), results);
@@ -67,6 +75,10 @@ public class GeofenceTransitionDetector {
         } else {
             return Geofence.GEOFENCE_TRANSITION_EXIT;
         }
+    }
+
+    interface SsidProvider {
+        String getSsid();
     }
 
 }

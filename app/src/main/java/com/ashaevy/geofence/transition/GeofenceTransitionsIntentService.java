@@ -35,7 +35,7 @@ public class GeofenceTransitionsIntentService extends IntentService {
     public void onCreate() {
         super.onCreate();
         mDataSource = Injection.provideGeofenceDataSource(this);
-        mGeofenceTransitionDetector = new GeofenceTransitionDetector(this);
+        mGeofenceTransitionDetector = new GeofenceTransitionDetector(mDataSource);
     }
 
     /**
@@ -47,7 +47,7 @@ public class GeofenceTransitionsIntentService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         // Handle network change
         if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
-            mGeofenceTransitionDetector.detectTransition();
+            mGeofenceTransitionDetector.detectTransition(this);
             return;
         }
 
@@ -68,7 +68,7 @@ public class GeofenceTransitionsIntentService extends IntentService {
                 geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
 
             mDataSource.saveGeofenceTransition(geofenceTransition);
-            mGeofenceTransitionDetector.detectTransition();
+            mGeofenceTransitionDetector.detectTransition(this);
 
             Log.i(TAG, getTransitionString(geofenceTransition));
         } else {

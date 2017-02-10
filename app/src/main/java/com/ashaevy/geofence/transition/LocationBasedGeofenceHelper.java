@@ -78,7 +78,7 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
     public LocationBasedGeofenceHelper(Context context) {
         mContext = context;
         mDataSource = Injection.provideGeofenceDataSource(context);
-        mGeofenceTransitionDetector = new GeofenceTransitionDetector(context);
+        mGeofenceTransitionDetector = new GeofenceTransitionDetector(mDataSource);
     }
 
     @Override
@@ -255,7 +255,7 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
             int geofenceTransition = mGeofenceTransitionDetector.
                     geofenceCoordinatesTransition(mPresenter.getGeofenceData(), mCurrentLocation);
             mDataSource.saveGeofenceTransition(geofenceTransition);
-            mGeofenceTransitionDetector.detectTransition();
+            mGeofenceTransitionDetector.detectTransition(mContext);
         }
     }
 

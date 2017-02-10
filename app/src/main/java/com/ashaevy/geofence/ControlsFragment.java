@@ -106,7 +106,9 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
             }
         });
 
-        view.findViewById(R.id.button_random_location).setOnClickListener(new View.OnClickListener() {
+        View randomLocationButton = view.findViewById(R.id.button_random_location);
+        randomLocationButton.setVisibility(View.GONE);
+        randomLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mPresenter.setRandomMockLocation();
