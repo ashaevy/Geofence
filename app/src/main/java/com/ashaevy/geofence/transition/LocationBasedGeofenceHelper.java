@@ -11,7 +11,8 @@ import android.util.Log;
 
 import com.ashaevy.geofence.Constants;
 import com.ashaevy.geofence.GeofenceContract;
-import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
+import com.ashaevy.geofence.Injection;
+import com.ashaevy.geofence.data.source.GeofenceDataSource;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -51,7 +52,7 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
 
     private Context mContext;
     private GeofenceContract.Presenter mPresenter;
-    private final SPGeofenceDataSource mDataSource;
+    private final GeofenceDataSource mDataSource;
     private final GeofenceTransitionDetector mGeofenceTransitionDetector;
 
     /**
@@ -74,11 +75,15 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
      */
     protected String mLastUpdateTime;
 
-    public LocationBasedGeofenceHelper(Context context, GeofenceContract.Presenter presenter) {
+    public LocationBasedGeofenceHelper(Context context) {
         mContext = context;
-        mPresenter = presenter;
-        mDataSource = new SPGeofenceDataSource(context);
+        mDataSource = Injection.provideGeofenceDataSource(context);
         mGeofenceTransitionDetector = new GeofenceTransitionDetector(context);
+    }
+
+    @Override
+    public void setPresenter(GeofenceContract.Presenter presenter) {
+        this.mPresenter = presenter;
     }
 
     @Override

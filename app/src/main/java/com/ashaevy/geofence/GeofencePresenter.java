@@ -12,10 +12,8 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import com.ashaevy.geofence.data.GeofenceData;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
-import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
 import com.ashaevy.geofence.transition.GeofenceHelper;
 import com.ashaevy.geofence.transition.GeofenceTransitionDetector;
-import com.ashaevy.geofence.transition.LocationBasedGeofenceHelper;
 import com.ashaevy.geofence.utils.NetworkUtils;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.maps.model.LatLng;
@@ -28,8 +26,6 @@ import static android.net.ConnectivityManager.CONNECTIVITY_ACTION;
  * Synchronize Map and Controls. Listen to geofense state changes. Updates Views.
  */
 public class GeofencePresenter implements GeofenceContract.Presenter {
-
-    private final Context mContext;
 
     private final GeofenceContract.MapView mMapView;
     private final GeofenceContract.ControlsView mControlsView;
@@ -51,15 +47,17 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     private NetworkReceiver mNetworkUpdateReceiver;
 
-    public GeofencePresenter(Context context, GeofenceContract.MapView mapView,
+    public GeofencePresenter(GeofenceDataSource geofenceDataSource, GeofenceContract.MapView mapView,
                              GeofenceContract.ControlsView controlsView,
-                             GeofenceContract.DialogsView dialogsView, Bundle savedInstanceState) {
+                             GeofenceContract.DialogsView dialogsView, Bundle savedInstanceState,
+                             GeofenceHelper geofenceHelper) {
+        mGeofenceDataSource = geofenceDataSource;
+
         mMapView = mapView;
         mControlsView = controlsView;
         mDialogsView = dialogsView;
-        mContext = context;
 
-        mGeofenceDataSource = new SPGeofenceDataSource(mContext);
+        mGeofenceHelper = geofenceHelper;
 
         mGeofenceAdded = mGeofenceDataSource.geofenceAdded();
         updateGeofenceAddedUIState(mGeofenceAdded);
@@ -84,7 +82,7 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
         mCurrentGeofenceState = Constants.GEOFENCE_STATE_UNKNOWN;
 
-        mGeofenceHelper = new LocationBasedGeofenceHelper(context, this);
+        mGeofenceHelper.setPresenter(this);
         mGeofenceHelper.create(savedInstanceState);
 
         mMapView.setPresenter(this);
@@ -98,34 +96,32 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     }
 
     @Override
-    public void start() {
+    public void start(Context context) {
         IntentFilter filter = new IntentFilter();
         filter.addAction(GeofenceTransitionDetector.GEOFENCE_UPDATED);
-        LocalBroadcastManager.getInstance(mContext).registerReceiver(mGeofenceUpdateReceiver,
+        LocalBroadcastManager.getInstance(context).registerReceiver(mGeofenceUpdateReceiver,
                 filter);
-        if (mGeofenceAdded) {
-            registerNetworkReceiver();
-        }
+        registerNetworkReceiver(context);
         mGeofenceHelper.start();
     }
 
-    private void registerNetworkReceiver() {
+    private void registerNetworkReceiver(Context context) {
         mNetworkUpdateReceiver = new NetworkReceiver();
         IntentFilter networkFilter = new IntentFilter();
         networkFilter.addAction(CONNECTIVITY_ACTION);
-        mContext.registerReceiver(mNetworkUpdateReceiver, networkFilter);
+        context.registerReceiver(mNetworkUpdateReceiver, networkFilter);
     }
 
     @Override
-    public void stop() {
-        unregisterReceiver();
-        LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mGeofenceUpdateReceiver);
+    public void stop(Context context) {
+        unregisterReceiver(context);
+        LocalBroadcastManager.getInstance(context).unregisterReceiver(mGeofenceUpdateReceiver);
         mGeofenceHelper.stop();
     }
 
-    private void unregisterReceiver() {
+    private void unregisterReceiver(Context context) {
         if (mNetworkUpdateReceiver != null) {
-            mContext.unregisterReceiver(mNetworkUpdateReceiver);
+            context.unregisterReceiver(mNetworkUpdateReceiver);
             mNetworkUpdateReceiver = null;
         }
     }
@@ -170,8 +166,8 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     }
 
     @Override
-    public void setCurrentWiFi() {
-        String currentSsid = NetworkUtils.getCurrentSsid(mContext);
+    public void setCurrentWiFi(Context context) {
+        String currentSsid = NetworkUtils.getCurrentSsid(context);
         if (currentSsid != null) {
             mCurrentGeofenceData.setWifiName(currentSsid);
             mControlsView.updateGeofence(mCurrentGeofenceData);
@@ -242,13 +238,6 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     public void updateGeofenceAddedState(boolean geofenceAdded) {
         mGeofenceAdded = geofenceAdded;
         updateGeofenceAddedUIState(geofenceAdded);
-
-        if (mGeofenceAdded) {
-            registerNetworkReceiver();
-        } else {
-            unregisterReceiver();
-        }
-
         mGeofenceDataSource.saveGeofenceAdded(mGeofenceAdded);
     }
 

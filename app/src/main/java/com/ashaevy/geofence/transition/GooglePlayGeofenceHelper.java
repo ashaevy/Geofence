@@ -39,7 +39,7 @@ public class GooglePlayGeofenceHelper implements
     public static final String DEFAULT_GEOFENCE_NAME = "GEOFENCE_CIRCLE";
 
     private final Context mContext;
-    private final GeofenceContract.Presenter mPresenter;
+    private GeofenceContract.Presenter mPresenter;
 
     /**
      * Provides the entry point to Google Play services.
@@ -51,9 +51,8 @@ public class GooglePlayGeofenceHelper implements
      */
     private PendingIntent mGeofencePendingIntent;
 
-    public GooglePlayGeofenceHelper(Context context, GeofenceContract.Presenter presenter) {
+    public GooglePlayGeofenceHelper(Context context) {
         mContext = context;
-        mPresenter = presenter;
     }
 
     @Override
@@ -65,6 +64,11 @@ public class GooglePlayGeofenceHelper implements
         // Kick off the request to build GoogleApiClient.
         buildGoogleApiClient();
 
+    }
+
+    @Override
+    public void setPresenter(GeofenceContract.Presenter presenter) {
+        mPresenter = presenter;
     }
 
     /**

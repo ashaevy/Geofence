@@ -1,5 +1,6 @@
 package com.ashaevy.geofence;
 
+import android.content.Context;
 import android.location.Location;
 import android.os.Bundle;
 
@@ -39,9 +40,9 @@ public interface GeofenceContract {
 
     interface Presenter {
 
-        void start();
+        void start(Context context);
 
-        void stop();
+        void stop(Context context);
 
         void updateGeofenceFromMap(GeofenceData geofenceData);
 
@@ -51,7 +52,7 @@ public interface GeofenceContract {
 
         void setRandomMockLocation();
 
-        void setCurrentWiFi();
+        void setCurrentWiFi(Context context);
 
         void updateGeofenceFromControls(GeofenceData geofenceData);
 

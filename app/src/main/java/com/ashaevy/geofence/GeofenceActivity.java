@@ -3,6 +3,9 @@ package com.ashaevy.geofence;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
+import com.ashaevy.geofence.data.source.GeofenceDataSource;
+import com.ashaevy.geofence.transition.LocationBasedGeofenceHelper;
+
 /**
  * Main activity.
  */
@@ -28,15 +31,18 @@ public class GeofenceActivity extends AppCompatActivity {
                     Constants.DIALOGS_FRAGMENT_TAG).commit();
         }
 
-        mGeofencePresenter = new GeofencePresenter(this, mapView, controlsView,
-                dialogsFragment, savedInstanceState);
+        GeofenceDataSource geofenceDataSource = Injection.provideGeofenceDataSource(this);
+        LocationBasedGeofenceHelper geofenceHelper = new LocationBasedGeofenceHelper(this);
+
+        mGeofencePresenter = new GeofencePresenter(geofenceDataSource, mapView, controlsView,
+                dialogsFragment, savedInstanceState, geofenceHelper);
 
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        mGeofencePresenter.start();
+        mGeofencePresenter.start(this);
     }
 
     @Override
@@ -48,7 +54,7 @@ public class GeofenceActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
-        mGeofencePresenter.stop();
+        mGeofencePresenter.stop(this);
         super.onStop();
     }
 

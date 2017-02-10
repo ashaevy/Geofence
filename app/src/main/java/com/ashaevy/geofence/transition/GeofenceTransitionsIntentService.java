@@ -5,9 +5,9 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.util.Log;
 
+import com.ashaevy.geofence.Injection;
 import com.ashaevy.geofence.R;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
-import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
 
@@ -34,7 +34,7 @@ public class GeofenceTransitionsIntentService extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mDataSource = new SPGeofenceDataSource(this);
+        mDataSource = Injection.provideGeofenceDataSource(this);
         mGeofenceTransitionDetector = new GeofenceTransitionDetector(this);
     }
 

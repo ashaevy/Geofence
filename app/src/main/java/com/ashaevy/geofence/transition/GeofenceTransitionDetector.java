@@ -7,10 +7,10 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 
 import com.ashaevy.geofence.Constants;
+import com.ashaevy.geofence.Injection;
 import com.ashaevy.geofence.utils.NetworkUtils;
 import com.ashaevy.geofence.data.GeofenceData;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
-import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
 import com.google.android.gms.location.Geofence;
 
 /**
@@ -30,7 +30,7 @@ public class GeofenceTransitionDetector {
 
     public void detectTransition() {
         int geofenceState = Constants.GEOFENCE_STATE_UNKNOWN;
-        GeofenceDataSource dataSource = new SPGeofenceDataSource(mContext);
+        GeofenceDataSource dataSource = Injection.provideGeofenceDataSource(mContext);
 
         int geofenceTransition = dataSource.readGeofenceTransition();
 

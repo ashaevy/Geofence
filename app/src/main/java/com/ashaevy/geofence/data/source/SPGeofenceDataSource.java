@@ -12,10 +12,12 @@ import com.google.gson.Gson;
  */
 public class SPGeofenceDataSource implements GeofenceDataSource {
 
+    private static SPGeofenceDataSource instance;
+
     private Gson gson = new Gson();
     private SharedPreferences mSharedPreferences;
 
-    public SPGeofenceDataSource(Context context) {
+    private SPGeofenceDataSource(Context context) {
         mSharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME,
                 Context.MODE_PRIVATE);
     }
@@ -56,5 +58,12 @@ public class SPGeofenceDataSource implements GeofenceDataSource {
     @Override
     public int readGeofenceTransition() {
         return mSharedPreferences.getInt(Constants.GEOFENCE_TRANSITION_KEY, -1);
+    }
+
+    public static GeofenceDataSource getInstance(Context context) {
+        if (instance == null) {
+            instance = new SPGeofenceDataSource(context.getApplicationContext());
+        }
+        return instance;
     }
 }

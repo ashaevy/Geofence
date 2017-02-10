@@ -86,7 +86,7 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         mSetCurrentWiFiButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mPresenter.setCurrentWiFi();
+                mPresenter.setCurrentWiFi(getActivity());
             }
         });
 

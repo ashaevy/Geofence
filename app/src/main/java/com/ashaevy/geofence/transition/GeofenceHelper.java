@@ -3,6 +3,7 @@ package com.ashaevy.geofence.transition;
 import android.location.Location;
 import android.os.Bundle;
 
+import com.ashaevy.geofence.GeofenceContract;
 import com.google.android.gms.maps.model.LatLng;
 
 /**
@@ -10,6 +11,8 @@ import com.google.android.gms.maps.model.LatLng;
  * and provider of Geofence transitions.
  */
 public interface GeofenceHelper {
+
+    void setPresenter(GeofenceContract.Presenter presenter);
 
     void create(Bundle savedInstanceState);
 
