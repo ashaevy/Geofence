@@ -24,7 +24,7 @@ public class GeofenceActivityTest {
 
     @Test
     public void clearText_showsErrorText() {
-        onView(withId(R.id.input_point_x)).
+        onView(withId(R.id.input_point_lat)).
                 perform(clearText());
 
         onView(withId(R.id.textinput_error))

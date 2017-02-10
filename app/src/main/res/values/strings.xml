@@ -3,8 +3,8 @@
     <string name="title_activity_geofence">Geofence</string>
 
     <!-- ControlsFragment -->
-    <string name="hint_point_x">Point X</string>
-    <string name="hint_point_y">Point Y</string>
+    <string name="hint_point_lat">Point Latitude</string>
+    <string name="hint_point_lon">Point Longitude</string>
     <string name="hint_radius">Radius</string>
     <string name="hint_wifi_name">WiFi Name</string>
     <string name="set_current_wifi">Set current WiFi</string>
