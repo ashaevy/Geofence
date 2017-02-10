@@ -1,7 +1,9 @@
 package com.ashaevy.geofence;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
@@ -16,13 +18,21 @@ import com.ashaevy.geofence.data.GeofenceData;
 
 public class ControlsFragment extends Fragment implements GeofenceContract.ControlsView {
 
-    private final String TAG = "ControlsFragment";
-
+    public static final int CHECK_LATITUDE = 0;
+    public static final int CHECK_LONGITUDE = 1;
+    public static final int CHECK_RADIUS = 2;
     private GeofenceContract.Presenter mPresenter;
+
     private TextInputEditText mPointXInput;
     private TextInputEditText mPointYInput;
     private TextInputEditText mRadiusInput;
     private TextInputEditText mWiFiNameInput;
+
+    private TextInputLayout mPointXInputLayout;
+    private TextInputLayout mPointYInputLayout;
+    private TextInputLayout mRadiusInputLayout;
+    private TextInputLayout mWiFiNameInputLayout;
+
     private View mStartGeofencingButton;
     private View mStopGeofencingButton;
     private View mSetCurrentWiFiButton;
@@ -40,10 +50,6 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
 
         // first setup
         updateGeofence(mPresenter.getGeofenceData());
-    }
-
-    public static ControlsFragment newInstance() {
-        return new ControlsFragment();
     }
 
     private class InputWatcher implements TextWatcher {
@@ -82,6 +88,11 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         mPointYInput = ((TextInputEditText) view.findViewById(R.id.input_point_y));
         mRadiusInput = ((TextInputEditText) view.findViewById(R.id.input_radius));
         mWiFiNameInput = ((TextInputEditText) view.findViewById(R.id.input_wifi_name));
+
+        mPointXInputLayout = (TextInputLayout) view.findViewById(R.id.input_layout_point_x);
+        mPointYInputLayout = ((TextInputLayout) view.findViewById(R.id.input_layout_point_y));
+        mRadiusInputLayout = ((TextInputLayout) view.findViewById(R.id.input_layout_radius));
+        mWiFiNameInputLayout = ((TextInputLayout) view.findViewById(R.id.input_layout_wifi_name));
 
         mSetCurrentWiFiButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -188,14 +199,16 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
     public boolean tryUpdatePresenterData(boolean reportError) {
         try {
             GeofenceData geofenceData = new GeofenceData();
-            geofenceData.setLatitude(doubleInputValidation(mPointXInput));
-            geofenceData.setLongitude(doubleInputValidation(mPointYInput));
-            geofenceData.setRadius(doubleInputValidation(mRadiusInput));
+            geofenceData.setLatitude(doubleInputValidation(mPointXInput, mPointXInputLayout, CHECK_LATITUDE));
+            geofenceData.setLongitude(doubleInputValidation(mPointYInput, mPointYInputLayout, CHECK_LONGITUDE));
+            geofenceData.setRadius(doubleInputValidation(mRadiusInput, mRadiusInputLayout, CHECK_RADIUS));
 
             Editable text = mWiFiNameInput.getText();
             if (!TextUtils.isEmpty(text)) {
                 geofenceData.setWifiName(text.toString());
+                mWiFiNameInputLayout.setErrorEnabled(false);
             } else {
+                mWiFiNameInputLayout.setError(getString(R.string.empty_value_validation_error));
                 throw new ValidationException();
             }
 
@@ -206,9 +219,6 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
 
             if (reportError) {
                 showErrorDialog();
-
-                // revert data
-                updateGeofence(mPresenter.getGeofenceData());
             }
 
             return false;
@@ -221,30 +231,53 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         builder.setMessage(R.string.validation_error)
                 .setTitle(R.string.validation_error_dialog_title);
 
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
         AlertDialog dialog = builder.create();
 
         dialog.show();
     }
 
-    private double doubleInputValidation(TextInputEditText doubleTextInputEditText) {
+    private double doubleInputValidation(TextInputEditText doubleTextInputEditText,
+                                         TextInputLayout doubleTextInputLayout, int check) {
         Editable editable = doubleTextInputEditText.getText();
         if (TextUtils.isEmpty(editable)) {
+            doubleTextInputLayout.setError(getString(R.string.empty_value_validation_error));
             throw new ValidationException();
         }
         try {
-            return Double.parseDouble(editable.toString());
+            double result = Double.parseDouble(editable.toString());
+            switch (check) {
+                case  CHECK_LATITUDE: if (result < -90 || result > 90) {
+                    doubleTextInputLayout.setError(getString(R.string.latitude_validation_error));
+                    throw new ValidationException();
+                }
+                    break;
+                case  CHECK_LONGITUDE: if (result < -180 || result > 180) {
+                    doubleTextInputLayout.setError(getString(R.string.longitude_validation_error));
+                    throw new ValidationException();
+                }
+                    break;
+                case CHECK_RADIUS: if (result <= 0) {
+                    doubleTextInputLayout.setError(getString(R.string.radius_validation_error));
+                    throw new ValidationException();
+                }
+            }
+            doubleTextInputLayout.setErrorEnabled(false);
+            return result;
         } catch (NumberFormatException e) {
+            doubleTextInputLayout.setError(getString(R.string.double_validation_error));
             throw new ValidationException();
         }
     }
 
-    private static class ValidationException extends RuntimeException {
-        public ValidationException() {}
-
-        public ValidationException(String message) {
-            super(message);
-        }
-
+    static class ValidationException extends RuntimeException {
+        ValidationException() {}
     }
 
 }

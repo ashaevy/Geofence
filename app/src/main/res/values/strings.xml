@@ -37,11 +37,18 @@
 
     <string name="geofence_transition_notification_text">Click notification to return to app</string>
 
-    <string name="validation_error">Invalid input. Coordinates and radius must be double and WiFi name should not be empty!</string>
+    <string name="validation_error">Invalid input. Fix errors and try again!</string>
     <string name="validation_error_dialog_title">Error!</string>
 
     <!--    Permissions    -->
     <string name="permission_rationale_location">Access to the location service is required for geofence detection.</string>
     <string name="location_permission_denied">This application requires location permission for geofence detection. Please try again and grant access to use the location.\nIf the permission has been permanently denied, it can be enabled from the System Settings &gt; Apps &gt; \'Geofence\'.</string>
     <string name="permission_required_toast">Location permission is required for this application.</string>
+
+    <!-- Validation -->
+    <string name="latitude_validation_error">Latitude shoud be within -90..90!</string>
+    <string name="longitude_validation_error">Longitude shoud be within -180..180!</string>
+    <string name="radius_validation_error">Radius should be positive.</string>
+    <string name="double_validation_error">Invalid value!</string>
+    <string name="empty_value_validation_error">Empty values not allowed!</string>
 </resources>

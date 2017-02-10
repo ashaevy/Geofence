@@ -13,6 +13,6 @@ import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
 public class Injection {
 
     public static GeofenceDataSource provideGeofenceDataSource(@NonNull Context context) {
-        return SPGeofenceDataSource.getInstance(context);
+        return FakeGeofenceDataSource.getInstance();
     }
 }
