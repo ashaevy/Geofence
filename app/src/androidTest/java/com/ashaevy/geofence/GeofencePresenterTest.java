@@ -34,8 +34,6 @@ public class GeofencePresenterTest {
 
     @Before
     public void setupMocksAndView() {
-        // Mockito has a very convenient way to inject mocks by using the @Mock annotation. To
-        // inject the mocks in the test the initMocks method needs to be called.
         mDataSource = mock(GeofenceDataSource.class);
         mMapView = mock(GeofenceContract.MapView.class);
         mDialogsView = mock(GeofenceContract.DialogsView.class);
@@ -45,14 +43,12 @@ public class GeofencePresenterTest {
 
     @Test
     public void reportPermissionError_updateDataInViews() {
-        // Get a reference to the class under test
         mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
                 mDialogsView, null, mGeofenceHelper);
 
-        // When the presenter is asked to report permission error
         mPresenter.reportPermissionError(-10);
 
-        verify(mDialogsView).requestLocationPermission(-10); // called on view
+        verify(mDialogsView).requestLocationPermission(-10);
 
         verify(mDataSource).saveGeofenceAdded(false);
 
@@ -62,7 +58,6 @@ public class GeofencePresenterTest {
 
     @Test
     public void updateGeofenceFromMap_changeAllExceptWifi() {
-        // Get a reference to the class under test
         mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
                 mDialogsView, null, mGeofenceHelper);
 
@@ -87,7 +82,6 @@ public class GeofencePresenterTest {
 
     @Test
     public void startGeofencing_storeData() {
-        // Get a reference to the class under test
         mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
                 mDialogsView, null, mGeofenceHelper);
 
@@ -98,7 +92,6 @@ public class GeofencePresenterTest {
 
     @Test
     public void startGeofencing_callHelper() {
-        // Get a reference to the class under test
         mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
                 mDialogsView, null, mGeofenceHelper);
 
@@ -111,7 +104,6 @@ public class GeofencePresenterTest {
 
     @Test
     public void stopGeofencing_updateState() {
-        // Get a reference to the class under test
         mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
                 mDialogsView, null, mGeofenceHelper);
 
