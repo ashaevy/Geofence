@@ -57,17 +57,16 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         mControlsView = views.getControlsView();
         mDialogsView = views.getDialogsView();
 
+        mMapView.setPresenter(this);
+        mControlsView.setPresenter(this);
 
         mGeofenceHelper = geofenceHelper;
         mGeofenceHelper.setPresenter(this);
-
-        mMapView.setPresenter(this);
-        mControlsView.setPresenter(this);
     }
 
     public void create(Bundle savedInstanceState) {
-        mCurrentGeofenceData = new GeofenceData();
         if (savedInstanceState != null) {
+            mCurrentGeofenceData = new GeofenceData();
             mCurrentGeofenceData.setLatitude(savedInstanceState.getDouble(KEY_LAT));
             mCurrentGeofenceData.setLongitude(savedInstanceState.getDouble(KEY_LON));
             mCurrentGeofenceData.setRadius(savedInstanceState.getDouble(KEY_R));
@@ -75,23 +74,12 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
             mCurrentGeofenceState = savedInstanceState.getInt(KEY_GEOFENCE_STATE);
             mGeofenceAdded = savedInstanceState.getBoolean(KEY_GEOFENCE_ADDED);
         } else {
-            GeofenceData storedGeofenceData = mGeofenceDataSource.readGeofenceData();
-            if (storedGeofenceData != null) {
-                mCurrentGeofenceData = storedGeofenceData;
-            } else {
-                generateDefaultGeofence();
-            }
+            mCurrentGeofenceData = mGeofenceDataSource.readGeofenceData();
             mCurrentGeofenceState = Constants.GEOFENCE_STATE_UNKNOWN;
             mGeofenceAdded = mGeofenceDataSource.geofenceAdded();
         }
 
         mGeofenceHelper.create(savedInstanceState);
-    }
-
-    private void generateDefaultGeofence() {
-        mCurrentGeofenceData.setLatitude(Constants.KIEV.latitude);
-        mCurrentGeofenceData.setLongitude(Constants.KIEV.longitude);
-        mCurrentGeofenceData.setRadius(Constants.DEFAULT_RADIUS);
     }
 
     @Override
@@ -140,7 +128,7 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     @Override
     public void startGeofencing() {
-        // start from outsize position as first trigger event is entering
+        // start from outside position as first trigger event is entering
         mGeofenceDataSource.saveGeofenceTransition(Geofence.GEOFENCE_TRANSITION_EXIT);
         mGeofenceDataSource.saveGeofenceData(mCurrentGeofenceData);
 

@@ -33,7 +33,18 @@ public class SPGeofenceDataSource implements GeofenceDataSource {
     @Override
     public GeofenceData readGeofenceData() {
         String json = mSharedPreferences.getString(Constants.GEOFENCE_DATA_KEY, null);
+        if (json == null) {
+            return generateDefaultGeofence();
+        }
         return gson.fromJson(json, GeofenceData.class);
+    }
+
+    private GeofenceData generateDefaultGeofence() {
+        GeofenceData result = new GeofenceData();
+        result.setLatitude(Constants.KIEV.latitude);
+        result.setLongitude(Constants.KIEV.longitude);
+        result.setRadius(Constants.DEFAULT_RADIUS);
+        return result;
     }
 
     @Override
