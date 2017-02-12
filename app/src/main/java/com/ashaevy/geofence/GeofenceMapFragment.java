@@ -94,7 +94,7 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
             mOnLocationChangedListener = null;
         }
 
-        public boolean setLocation(Location location) {
+        boolean setLocation(Location location) {
             if (mOnLocationChangedListener != null) {
                 mOnLocationChangedListener.onLocationChanged(location);
                 return true;
@@ -168,10 +168,10 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
 
     private void onMarkerMoved(Marker marker) {
         mGeofenceCircle.onMarkerMoved(marker);
-        updateEdits();
+        updatePresenterData();
     }
 
-    private void updateEdits() {
+    private void updatePresenterData() {
         LatLng position = mGeofenceCircle.centerMarker.getPosition();
         GeofenceData geofenceData = new GeofenceData();
         geofenceData.setLatitude(position.latitude);
@@ -231,12 +231,12 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
             return false;
         }
 
-        public void moveCircle(LatLng position) {
+        void moveCircle(LatLng position) {
             circle.setCenter(position);
             radiusMarker.setPosition(toRadiusLatLng(position, radius));
         }
 
-        public void updateCircleParams(LatLng position, double radius) {
+        void updateCircleParams(LatLng position, double radius) {
             this.radius = radius;
             circle.setCenter(position);
             circle.setRadius(radius);
@@ -244,7 +244,7 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
             radiusMarker.setPosition(toRadiusLatLng(centerMarker.getPosition(), radius));
         }
 
-        public void setEditable(boolean editable) {
+        void setEditable(boolean editable) {
             centerMarker.setDraggable(editable);
             radiusMarker.setDraggable(editable);
         }

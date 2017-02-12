@@ -34,8 +34,13 @@ public class GeofenceActivity extends AppCompatActivity {
         GeofenceDataSource geofenceDataSource = Injection.provideGeofenceDataSource(this);
         LocationBasedGeofenceHelper geofenceHelper = new LocationBasedGeofenceHelper(this);
 
-        mGeofencePresenter = new GeofencePresenter(geofenceDataSource, mapView, controlsView,
-                dialogsFragment, savedInstanceState, geofenceHelper);
+        GeofencePresenter.Views views = new GeofencePresenter.Views(mapView,
+                controlsView, dialogsFragment);
+
+        mGeofencePresenter = new GeofencePresenter(geofenceDataSource, views,
+                geofenceHelper);
+
+        mGeofencePresenter.create(savedInstanceState);
 
     }
 
@@ -48,7 +53,6 @@ public class GeofenceActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-
         mGeofencePresenter.saveInstanceState(outState);
     }
 

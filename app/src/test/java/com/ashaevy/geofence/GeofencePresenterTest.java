@@ -28,6 +28,8 @@ public class GeofencePresenterTest {
 
     private GeofenceContract.ControlsView mControlsView;
 
+    private GeofencePresenter.Views mViews;
+
     private GeofenceHelper mGeofenceHelper;
 
     private GeofencePresenter mPresenter;
@@ -38,13 +40,14 @@ public class GeofencePresenterTest {
         mMapView = mock(GeofenceContract.MapView.class);
         mDialogsView = mock(GeofenceContract.DialogsView.class);
         mControlsView = mock(GeofenceContract.ControlsView.class);
+        mViews = new GeofencePresenter.Views(mMapView, mControlsView, mDialogsView);
         mGeofenceHelper = mock(GeofenceHelper.class);
     }
 
     @Test
     public void reportPermissionError_updateDataInViews() {
-        mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
-                mDialogsView, null, mGeofenceHelper);
+        mPresenter = new GeofencePresenter(mDataSource, mViews, mGeofenceHelper);
+        mPresenter.create(null);
 
         mPresenter.reportPermissionError(-10);
 
@@ -52,14 +55,14 @@ public class GeofencePresenterTest {
 
         verify(mDataSource).saveGeofenceAdded(false);
 
-        verify(mControlsView, times(2)).setGeofencingStarted(false);
-        verify(mMapView, times(2)).setGeofencingStarted(false);
+        verify(mControlsView).setGeofencingStarted(false);
+        verify(mMapView).setGeofencingStarted(false);
     }
 
     @Test
     public void updateGeofenceFromMap_changeAllExceptWifi() {
-        mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
-                mDialogsView, null, mGeofenceHelper);
+        mPresenter = new GeofencePresenter(mDataSource, mViews, mGeofenceHelper);
+        mPresenter.create(null);
 
         mPresenter.getGeofenceData().setWifiName("test");
         String wifiName = mPresenter.getGeofenceData().getWifiName();
@@ -82,8 +85,8 @@ public class GeofencePresenterTest {
 
     @Test
     public void startGeofencing_storeData() {
-        mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
-                mDialogsView, null, mGeofenceHelper);
+        mPresenter = new GeofencePresenter(mDataSource, mViews, mGeofenceHelper);
+        mPresenter.create(null);
 
         mPresenter.startGeofencing();
 
@@ -92,8 +95,8 @@ public class GeofencePresenterTest {
 
     @Test
     public void startGeofencing_callHelper() {
-        mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
-                mDialogsView, null, mGeofenceHelper);
+        mPresenter = new GeofencePresenter(mDataSource, mViews, mGeofenceHelper);
+        mPresenter.create(null);
 
         mPresenter.startGeofencing();
 
@@ -104,8 +107,8 @@ public class GeofencePresenterTest {
 
     @Test
     public void stopGeofencing_updateState() {
-        mPresenter = new GeofencePresenter(mDataSource, mMapView, mControlsView,
-                mDialogsView, null, mGeofenceHelper);
+        mPresenter = new GeofencePresenter(mDataSource, mViews, mGeofenceHelper);
+        mPresenter.create(null);
 
         mPresenter.stopGeofencing();
 

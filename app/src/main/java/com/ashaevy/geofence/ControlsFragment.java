@@ -47,9 +47,6 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
     @Override
     public void setPresenter(GeofenceContract.Presenter presenter) {
         mPresenter = presenter;
-
-        // first setup
-        updateGeofence(mPresenter.getGeofenceData());
     }
 
     private class InputWatcher implements TextWatcher {
@@ -137,8 +134,8 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
 
     @Override
     public void onPause() {
-        isResumed = false;
         super.onPause();
+        isResumed = false;
     }
 
     private void registerTextWatcher() {

@@ -27,42 +27,45 @@ import static android.net.ConnectivityManager.CONNECTIVITY_ACTION;
  */
 public class GeofencePresenter implements GeofenceContract.Presenter {
 
+    private final GeofenceHelper mGeofenceHelper;
+    private final GeofenceDataSource mGeofenceDataSource;
+
     private final GeofenceContract.MapView mMapView;
     private final GeofenceContract.ControlsView mControlsView;
     private final GeofenceContract.DialogsView mDialogsView;
 
-    private final GeofenceHelper mGeofenceHelper;
-
     private GeofenceData mCurrentGeofenceData;
     private int mCurrentGeofenceState;
+    private boolean mGeofenceAdded;
+
+    private NetworkReceiver mNetworkUpdateReceiver;
 
     private String KEY_LAT = "KEY_LAT";
     private String KEY_LON = "KEY_LON";
     private String KEY_R = "KEY_R";
     private String KEY_WIFI = "KEY_WIFI";
     private String KEY_GEOFENCE_STATE = "KEY_GEOFENCE_STATE";
+    private static final String KEY_GEOFENCE_ADDED = "KEY_GEOFENCE_ADDED";
 
-    private boolean mGeofenceAdded;
-    private final GeofenceDataSource mGeofenceDataSource;
-
-    private NetworkReceiver mNetworkUpdateReceiver;
-
-    public GeofencePresenter(GeofenceDataSource geofenceDataSource, GeofenceContract.MapView mapView,
-                             GeofenceContract.ControlsView controlsView,
-                             GeofenceContract.DialogsView dialogsView, Bundle savedInstanceState,
+    public GeofencePresenter(GeofenceDataSource geofenceDataSource,
+                             Views views,
                              GeofenceHelper geofenceHelper) {
+
         mGeofenceDataSource = geofenceDataSource;
 
-        mMapView = mapView;
-        mControlsView = controlsView;
-        mDialogsView = dialogsView;
+        mMapView = views.getMapView();
+        mControlsView = views.getControlsView();
+        mDialogsView = views.getDialogsView();
+
 
         mGeofenceHelper = geofenceHelper;
+        mGeofenceHelper.setPresenter(this);
 
-        mGeofenceAdded = mGeofenceDataSource.geofenceAdded();
-        updateGeofenceAddedUIState(mGeofenceAdded);
+        mMapView.setPresenter(this);
+        mControlsView.setPresenter(this);
+    }
 
-
+    public void create(Bundle savedInstanceState) {
         mCurrentGeofenceData = new GeofenceData();
         if (savedInstanceState != null) {
             mCurrentGeofenceData.setLatitude(savedInstanceState.getDouble(KEY_LAT));
@@ -70,6 +73,7 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
             mCurrentGeofenceData.setRadius(savedInstanceState.getDouble(KEY_R));
             mCurrentGeofenceData.setWifiName(savedInstanceState.getString(KEY_WIFI));
             mCurrentGeofenceState = savedInstanceState.getInt(KEY_GEOFENCE_STATE);
+            mGeofenceAdded = savedInstanceState.getBoolean(KEY_GEOFENCE_ADDED);
         } else {
             GeofenceData storedGeofenceData = mGeofenceDataSource.readGeofenceData();
             if (storedGeofenceData != null) {
@@ -77,16 +81,11 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
             } else {
                 generateDefaultGeofence();
             }
-
+            mCurrentGeofenceState = Constants.GEOFENCE_STATE_UNKNOWN;
+            mGeofenceAdded = mGeofenceDataSource.geofenceAdded();
         }
 
-        mCurrentGeofenceState = Constants.GEOFENCE_STATE_UNKNOWN;
-
-        mGeofenceHelper.setPresenter(this);
         mGeofenceHelper.create(savedInstanceState);
-
-        mMapView.setPresenter(this);
-        mControlsView.setPresenter(this);
     }
 
     private void generateDefaultGeofence() {
@@ -97,6 +96,10 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     @Override
     public void start(Context context) {
+        updateGeofenceAddedUIState(mGeofenceAdded);
+        mControlsView.updateGeofence(mCurrentGeofenceData);
+        mMapView.updateGeofence(mCurrentGeofenceData);
+
         IntentFilter filter = new IntentFilter();
         filter.addAction(GeofenceTransitionDetector.GEOFENCE_UPDATED);
         LocalBroadcastManager.getInstance(context).registerReceiver(mGeofenceUpdateReceiver,
@@ -229,6 +232,7 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         outState.putDouble(KEY_R, mCurrentGeofenceData.getRadius());
         outState.putString(KEY_WIFI, mCurrentGeofenceData.getWifiName());
 
+        outState.putBoolean(KEY_GEOFENCE_ADDED, mGeofenceAdded);
         outState.putInt(KEY_GEOFENCE_STATE, mCurrentGeofenceState);
 
         mGeofenceHelper.saveInstanceState(outState);
@@ -250,6 +254,31 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     public void reportPermissionError(int requestId) {
         updateGeofenceAddedState(false);
         mDialogsView.requestLocationPermission(requestId);
+    }
+
+    public static class Views {
+        private final GeofenceContract.MapView mMapView;
+        private final GeofenceContract.ControlsView mControlsView;
+        private final GeofenceContract.DialogsView mDialogsView;
+
+        public Views(GeofenceContract.MapView mMapView, GeofenceContract.ControlsView mControlsView,
+                     GeofenceContract.DialogsView mDialogsView) {
+            this.mMapView = mMapView;
+            this.mControlsView = mControlsView;
+            this.mDialogsView = mDialogsView;
+        }
+
+        public GeofenceContract.MapView getMapView() {
+            return mMapView;
+        }
+
+        public GeofenceContract.ControlsView getControlsView() {
+            return mControlsView;
+        }
+
+        public GeofenceContract.DialogsView getDialogsView() {
+            return mDialogsView;
+        }
     }
 
 }

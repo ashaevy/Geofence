@@ -279,9 +279,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
     public void onConnected(Bundle connectionHint) {
         Log.i(TAG, "Connected to GoogleApiClient");
 
-        // If the user presses the Start Updates button before GoogleApiClient connects, we set
-        // mRequestingLocationUpdates to true (see startUpdatesButtonHandler()). Here, we check
-        // the value of mRequestingLocationUpdates and if it is true, we start location updates.
         if (mPresenter.geofenceAdded()) {
             startLocationUpdates();
         }
