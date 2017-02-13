@@ -51,4 +51,14 @@
     <string name="radius_validation_error">Radius should be positive.</string>
     <string name="double_validation_error">Invalid value!</string>
     <string name="empty_value_validation_error">Empty values not allowed!</string>
+    <string name="title_activity_main">MainActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="nav_geofence">Geofence</string>
+    <string name="nav_preferences">Preferences</string>
+    <string name="nav_header_title">Geofence detector</string>
+    <string name="nav_header_email">ashaevy@gmail.com</string>
+
 </resources>

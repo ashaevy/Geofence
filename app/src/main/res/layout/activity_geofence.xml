@@ -10,7 +10,7 @@
         android:name="com.ashaevy.geofence.GeofenceMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        tools:context="com.ashaevy.geofence.GeofenceActivity"
+        tools:context="com.ashaevy.geofence.MainActivity"
         android:layout_weight="4"/>
 
     <fragment

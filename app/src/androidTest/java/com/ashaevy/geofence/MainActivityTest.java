@@ -25,10 +25,10 @@ import static android.support.test.espresso.matcher.ViewMatchers.withId;
  * Testing Geofence activity.
  */
 @RunWith(AndroidJUnit4.class)
-public class GeofenceActivityTest {
+public class MainActivityTest {
     @Rule
-    public ActivityTestRule<GeofenceActivity> mActivityTestRule =
-            new ActivityTestRule<>(GeofenceActivity.class);
+    public ActivityTestRule<MainActivity> mActivityTestRule =
+            new ActivityTestRule<>(MainActivity.class);
 
     private UiDevice mDevice;
 
@@ -55,7 +55,7 @@ public class GeofenceActivityTest {
                 try {
                     allowPermissions.click();
                 } catch (UiObjectNotFoundException e) {
-                    Log.e( GeofenceActivityTest.class.getSimpleName(),
+                    Log.e( MainActivityTest.class.getSimpleName(),
                             "There is no permissions dialog to interact with ", e);
                 }
             }
