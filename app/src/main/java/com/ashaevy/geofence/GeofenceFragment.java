@@ -1,14 +1,18 @@
 package com.ashaevy.geofence;
 
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
+import com.ashaevy.geofence.transition.GeofenceHelper;
+import com.ashaevy.geofence.transition.GooglePlayGeofenceHelper;
 import com.ashaevy.geofence.transition.LocationBasedGeofenceHelper;
 
 /**
@@ -45,7 +49,21 @@ public class GeofenceFragment extends Fragment {
         }
 
         GeofenceDataSource geofenceDataSource = Injection.provideGeofenceDataSource(getActivity());
-        LocationBasedGeofenceHelper geofenceHelper = new LocationBasedGeofenceHelper(getActivity());
+
+        GeofenceHelper geofenceHelper;
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String geofenceDetectionProvider = sharedPref.getString(SettingsFragment.
+                KEY_GEOFENCE_DETECTION_PROVIDER, getString(R.string.
+                pref_geofenceDetectionProviders_default));
+        if (geofenceDetectionProvider.equals(getString(R.string.
+                pref_geofenceDetectionProviders_gp_location))) {
+            geofenceHelper = new LocationBasedGeofenceHelper(getActivity());
+        } else if (geofenceDetectionProvider.equals(getString(R.string.
+                pref_geofenceDetectionProviders_gp_geofence))) {
+            geofenceHelper = new GooglePlayGeofenceHelper(getActivity());
+        } else {
+            throw new IllegalArgumentException("Invalid Geofence Detection Provider.");
+        }
 
         GeofencePresenter.Views views = new GeofencePresenter.Views(mapView,
                 controlsView, dialogsFragment);

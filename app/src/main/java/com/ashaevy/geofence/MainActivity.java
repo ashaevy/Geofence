@@ -66,7 +66,9 @@ public class MainActivity extends AppCompatActivity
             getSupportFragmentManager().beginTransaction().replace(R.id.content_frame,
                     geofenceFragment).commit();
         } else if (id == R.id.nav_preferences) {
-
+            SettingsFragment settingsFragment = new SettingsFragment();
+            getSupportFragmentManager().beginTransaction().replace(R.id.content_frame,
+                    settingsFragment).commit();
         }
     }
 
