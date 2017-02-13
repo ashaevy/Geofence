@@ -1,7 +1,6 @@
-package com.ashaevy.geofence;
+package com.ashaevy.geofence.data.source;
 
 import com.ashaevy.geofence.data.GeofenceData;
-import com.ashaevy.geofence.data.source.GeofenceDataSource;
 import com.google.android.gms.location.Geofence;
 
 /**
@@ -12,7 +11,7 @@ public class FakeGeofenceDataSource implements GeofenceDataSource {
 
     private static FakeGeofenceDataSource instance = new FakeGeofenceDataSource();
 
-    private GeofenceData mGeofenceData;
+    private GeofenceData mGeofenceData = SPGeofenceDataSource.generateDefaultGeofence();
     private boolean mGeofenceAdded;
     private int mTransition = Geofence.GEOFENCE_TRANSITION_EXIT;
 

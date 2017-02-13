@@ -3,8 +3,8 @@ package com.ashaevy.geofence;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import com.ashaevy.geofence.data.source.FakeGeofenceDataSource;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
-import com.ashaevy.geofence.data.source.SPGeofenceDataSource;
 
 /**
  * Enables injection of production implementations for
