@@ -38,8 +38,6 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     private int mCurrentGeofenceState;
     private boolean mGeofenceAdded;
 
-    private NetworkReceiver mNetworkUpdateReceiver;
-
     private String KEY_LAT = "KEY_LAT";
     private String KEY_LON = "KEY_LON";
     private String KEY_R = "KEY_R";
@@ -87,34 +85,18 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         updateGeofenceAddedUIState(mGeofenceAdded);
         mControlsView.updateGeofence(mCurrentGeofenceData);
         mMapView.updateGeofence(mCurrentGeofenceData);
-
         IntentFilter filter = new IntentFilter();
         filter.addAction(GeofenceTransitionDetector.GEOFENCE_UPDATED);
         LocalBroadcastManager.getInstance(context).registerReceiver(mGeofenceUpdateReceiver,
                 filter);
-        registerNetworkReceiver(context);
         mGeofenceHelper.start();
     }
 
-    private void registerNetworkReceiver(Context context) {
-        mNetworkUpdateReceiver = new NetworkReceiver();
-        IntentFilter networkFilter = new IntentFilter();
-        networkFilter.addAction(CONNECTIVITY_ACTION);
-        context.registerReceiver(mNetworkUpdateReceiver, networkFilter);
-    }
 
     @Override
     public void stop(Context context) {
-        unregisterReceiver(context);
         LocalBroadcastManager.getInstance(context).unregisterReceiver(mGeofenceUpdateReceiver);
         mGeofenceHelper.stop();
-    }
-
-    private void unregisterReceiver(Context context) {
-        if (mNetworkUpdateReceiver != null) {
-            context.unregisterReceiver(mNetworkUpdateReceiver);
-            mNetworkUpdateReceiver = null;
-        }
     }
 
     @Override
@@ -204,15 +186,6 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         }
     };
 
-    private class NetworkReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (CONNECTIVITY_ACTION.equals(intent.getAction()) && mGeofenceAdded) {
-                mGeofenceHelper.notifyAboutNetworkChange();
-            }
-        }
-    }
-
     @Override
     public void saveInstanceState(Bundle outState) {
         outState.putDouble(KEY_LAT, mCurrentGeofenceData.getLatitude());
@@ -242,6 +215,16 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     public void reportPermissionError(int requestId) {
         updateGeofenceAddedState(false);
         mDialogsView.requestLocationPermission(requestId);
+    }
+
+    @Override
+    public void reportNotReadyError() {
+        mDialogsView.reportNotReadyError();
+    }
+
+    @Override
+    public void reportErrorMessage(String errorMessage) {
+        mDialogsView.reportErrorMessage(errorMessage);
     }
 
     public static class Views {

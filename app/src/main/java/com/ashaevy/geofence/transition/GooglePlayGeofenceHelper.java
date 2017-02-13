@@ -5,15 +5,12 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.ashaevy.geofence.Constants;
-import com.ashaevy.geofence.GeofenceContract;
-import com.ashaevy.geofence.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -30,21 +27,15 @@ import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
  * This class contains all helper code to setup receiving geofence transition events from
  * Google Play Geofence API.
  */
-public class GooglePlayGeofenceHelper implements
+public class GooglePlayGeofenceHelper extends BaseGeofenceHelper implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        ResultCallback<Status>, GeofenceHelper {
+        GeofenceHelper {
 
     protected static final String TAG = "GeofenceHelper";
     public static final String DEFAULT_GEOFENCE_NAME = "GEOFENCE_CIRCLE";
 
     private final Context mContext;
-    private GeofenceContract.Presenter mPresenter;
-
-    /**
-     * Provides the entry point to Google Play services.
-     */
-    protected GoogleApiClient mGoogleApiClient;
 
     /**
      * Used when requesting to add or remove geofences.
@@ -52,6 +43,7 @@ public class GooglePlayGeofenceHelper implements
     private PendingIntent mGeofencePendingIntent;
 
     public GooglePlayGeofenceHelper(Context context) {
+        super(context);
         mContext = context;
     }
 
@@ -66,38 +58,16 @@ public class GooglePlayGeofenceHelper implements
 
     }
 
-    @Override
-    public void setPresenter(GeofenceContract.Presenter presenter) {
-        mPresenter = presenter;
-    }
-
     /**
      * Builds a GoogleApiClient. Uses the {@code #addApi} method to request the LocationServices API.
      */
+    @Override
     protected void buildGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(mContext)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
-    }
-
-    @Override
-    public void enableMockLocation() {
-        try {
-            LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, true);
-        } catch (SecurityException e) {
-            logSecurityException(e);
-        }
-    }
-
-    @Override
-    public void disableMockLocation() {
-        try {
-            LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, false);
-        } catch (SecurityException e) {
-            logSecurityException(e);
-        }
     }
 
     @Override
@@ -109,27 +79,8 @@ public class GooglePlayGeofenceHelper implements
     }
 
     @Override
-    public void setMockLocation(Location location) {
-        try {
-            LocationServices.FusedLocationApi.setMockLocation(mGoogleApiClient, location);
-        } catch (SecurityException e) {
-            logSecurityException(e);
-        }
-    }
-
-    @Override
-    public void start() {
-        mGoogleApiClient.connect();
-    }
-
-    @Override
     public void saveInstanceState(Bundle outState) {
 
-    }
-
-    @Override
-    public void stop() {
-        mGoogleApiClient.disconnect();
     }
 
     @Override
@@ -207,10 +158,7 @@ public class GooglePlayGeofenceHelper implements
      * specified geofence. Handles the success or failure results returned by addGeofences().
      */
     public void addGeofence(String requestId, LatLng point, float radius) {
-        if (!mGoogleApiClient.isConnected()) {
-            Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (checkGoogleClientNotReady()) return;
 
         if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -222,10 +170,23 @@ public class GooglePlayGeofenceHelper implements
                     // pending intent is used to generate an intent when a matched geofence
                     // transition is observed.
                     getGeofencePendingIntent()
-            ).setResultCallback(this); // Result processed in onResult().
+            ).setResultCallback(new ResultCallback<Status>() {
+                @Override
+                public void onResult(@NonNull Status status) {
+                    geofenceAddedResult(status, true);
+                }
+            }); // Result processed in onResult().
         } else {
             mPresenter.reportPermissionError(Constants.LOCATION_PERMISSION_REQUEST_CODE);
         }
+    }
+
+    private boolean checkGoogleClientNotReady() {
+        if (!mGoogleApiClient.isConnected()) {
+            mPresenter.reportNotReadyError();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -234,10 +195,7 @@ public class GooglePlayGeofenceHelper implements
      */
     @Override
     public void removeGeofence() {
-        if (!mGoogleApiClient.isConnected()) {
-            Toast.makeText(mContext, mContext.getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (checkGoogleClientNotReady()) return;
 
         if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -246,37 +204,26 @@ public class GooglePlayGeofenceHelper implements
                     mGoogleApiClient,
                     // This is the same pending intent that was used in addGeofences().
                     getGeofencePendingIntent()
-            ).setResultCallback(this); // Result processed in onResult().
+            ).setResultCallback(new ResultCallback<Status>() {
+                @Override
+                public void onResult(@NonNull Status status) {
+                    geofenceAddedResult(status, false);
+                }
+            }); // Result processed in onResult().
         } else {
             mPresenter.reportPermissionError(Constants.LOCATION_PERMISSION_REQUEST_CODE);
         }
 
     }
 
-    private void logSecurityException(SecurityException securityException) {
-        Log.e(TAG, "Invalid location permission. " +
-                "You need to use ACCESS_FINE_LOCATION with geofences", securityException);
-    }
-
-    /**
-     * Runs when the result of calling addGeofences() and removeGeofences() becomes available.
-     * Either method can complete successfully or with an error.
-     *
-     * Since this activity implements the {@link ResultCallback} interface, we are required to
-     * define this method.
-     *
-     * @param status The Status returned through a PendingIntent when addGeofences() or
-     *               removeGeofences() get called.
-     */
-    @Override
-    public void onResult(Status status) {
+    private void geofenceAddedResult(Status status, boolean added) {
         if (status.isSuccess()) {
-            mPresenter.updateGeofenceAddedState(!mPresenter.geofenceAdded());
+            mPresenter.updateGeofenceAddedState(added);
         } else {
             // Get the status code for the error and log it using a user-friendly message.
             String errorMessage = GeofenceErrorMessages.getErrorString(mContext,
                     status.getStatusCode());
-            Log.e(TAG, errorMessage);
+            mPresenter.reportErrorMessage(errorMessage);
         }
     }
 

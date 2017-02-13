@@ -28,7 +28,7 @@ import java.util.Date;
 /**
  * This class receives users location from Location services and detect geofence transitions.
  */
-public class LocationBasedGeofenceHelper implements GeofenceHelper,
+public class LocationBasedGeofenceHelper extends BaseGeofenceHelper implements GeofenceHelper,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
 
@@ -48,17 +48,9 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
 
     // Keys for storing activity state in the Bundle.
     protected final static String LOCATION_KEY = "location-key";
-    protected final static String LAST_UPDATED_TIME_STRING_KEY = "last-updated-time-string-key";
 
-    private Context mContext;
-    private GeofenceContract.Presenter mPresenter;
     private final GeofenceDataSource mDataSource;
     private final GeofenceTransitionDetector mGeofenceTransitionDetector;
-
-    /**
-     * Provides the entry point to Google Play services.
-     */
-    protected GoogleApiClient mGoogleApiClient;
 
     /**
      * Stores parameters for requests to the FusedLocationProviderApi.
@@ -70,20 +62,10 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
      */
     protected Location mCurrentLocation;
 
-    /**
-     * Time when the location was updated represented as a String.
-     */
-    protected String mLastUpdateTime;
-
     public LocationBasedGeofenceHelper(Context context) {
-        mContext = context;
+        super(context);
         mDataSource = Injection.provideGeofenceDataSource(context);
         mGeofenceTransitionDetector = new GeofenceTransitionDetector(mDataSource);
-    }
-
-    @Override
-    public void setPresenter(GeofenceContract.Presenter presenter) {
-        this.mPresenter = presenter;
     }
 
     @Override
@@ -94,16 +76,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
         // Kick off the process of building a GoogleApiClient and requesting the LocationServices
         // API.
         buildGoogleApiClient();
-    }
-
-    @Override
-    public void start() {
-        mGoogleApiClient.connect();
-    }
-
-    @Override
-    public void stop() {
-        mGoogleApiClient.disconnect();
     }
 
     @Override
@@ -118,32 +90,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
         if (mPresenter.geofenceAdded()) {
             mPresenter.updateGeofenceAddedState(false);
             stopLocationUpdates();
-        }
-    }
-
-    @Override
-    public void setMockLocation(Location mockLocation) {
-        try {
-            LocationServices.FusedLocationApi.setMockLocation(mGoogleApiClient, mockLocation);
-        } catch (SecurityException e) {
-            logSecurityException(e);
-        }
-    }
-
-    public void enableMockLocation() {
-        try {
-            LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, true);
-        } catch (SecurityException e) {
-            logSecurityException(e);
-        }
-    }
-
-    @Override
-    public void disableMockLocation() {
-        try {
-            LocationServices.FusedLocationApi.setMockMode(mGoogleApiClient, false);
-        } catch (SecurityException e) {
-            logSecurityException(e);
         }
     }
 
@@ -166,11 +112,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
                 // Since LOCATION_KEY was found in the Bundle, we can be sure that mCurrentLocation
                 // is not null.
                 mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
-            }
-
-            // Update the value of mLastUpdateTime from the Bundle and update the UI.
-            if (savedInstanceState.keySet().contains(LAST_UPDATED_TIME_STRING_KEY)) {
-                mLastUpdateTime = savedInstanceState.getString(LAST_UPDATED_TIME_STRING_KEY);
             }
 
             updateGeofenceTransitionState();
@@ -230,7 +171,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
             // try to init current location
             if (mCurrentLocation == null) {
                 mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-                mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
                 updateGeofenceTransitionState();
             }
 
@@ -290,7 +230,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
     @Override
     public void onLocationChanged(Location location) {
         mCurrentLocation = location;
-        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
         updateGeofenceTransitionState();
     }
 
@@ -316,11 +255,6 @@ public class LocationBasedGeofenceHelper implements GeofenceHelper,
     @Override
     public void saveInstanceState (Bundle savedInstanceState) {
         savedInstanceState.putParcelable(LOCATION_KEY, mCurrentLocation);
-        savedInstanceState.putString(LAST_UPDATED_TIME_STRING_KEY, mLastUpdateTime);
-    }
-
-    private void logSecurityException(SecurityException securityException) {
-        Log.e(TAG, "Invalid permission.", securityException);
     }
 
 }

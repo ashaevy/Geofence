@@ -13,6 +13,7 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test presenter.
@@ -37,6 +38,7 @@ public class GeofencePresenterTest {
     @Before
     public void setupMocksAndView() {
         mDataSource = mock(GeofenceDataSource.class);
+        when(mDataSource.readGeofenceData()).thenReturn(new GeofenceData());
         mMapView = mock(GeofenceContract.MapView.class);
         mDialogsView = mock(GeofenceContract.DialogsView.class);
         mControlsView = mock(GeofenceContract.ControlsView.class);

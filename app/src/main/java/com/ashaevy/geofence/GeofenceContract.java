@@ -36,6 +36,10 @@ public interface GeofenceContract {
     interface DialogsView {
 
         void requestLocationPermission(int requestId);
+
+        void reportNotReadyError();
+
+        void reportErrorMessage(String errorMessage);
     }
 
     interface Presenter {
@@ -65,6 +69,10 @@ public interface GeofenceContract {
         boolean geofenceAdded();
 
         void reportPermissionError(int requestId);
+
+        void reportNotReadyError();
+
+        void reportErrorMessage(String errorMessage);
     }
 
 }

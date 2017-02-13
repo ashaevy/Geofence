@@ -3,6 +3,7 @@ package com.ashaevy.geofence;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.widget.Toast;
 
 import com.ashaevy.geofence.utils.PermissionUtils;
 
@@ -32,6 +33,18 @@ public class DialogsFragment extends Fragment implements GeofenceContract.Dialog
             PermissionUtils.requestPermissionFromFragment(this, requestCode,
                     android.Manifest.permission.ACCESS_FINE_LOCATION, false, Constants.DIALOGS_FRAGMENT_TAG);
         }
+    }
+
+    @Override
+    public void reportNotReadyError() {
+        Toast.makeText(getActivity(),
+                getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void reportErrorMessage(String errorMessage) {
+        Toast.makeText(getActivity(),
+                errorMessage, Toast.LENGTH_SHORT).show();
     }
 
     @Override
