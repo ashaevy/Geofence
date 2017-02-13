@@ -1,13 +1,16 @@
 package com.ashaevy.geofence;
 
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.View;
 
 import com.ashaevy.geofence.data.GeofenceData;
 import com.ashaevy.geofence.utils.SphericalUtil;
@@ -138,8 +141,15 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
         mapLoaded = false;
         requestRescaleFlag = true;
 
-        //setupUsageOfMockLocation();
-        setupMyLocation();
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        boolean useMockLocation = sharedPref.getBoolean(SettingsFragment.
+                KEY_GEOFENCE_USE_MOCK_LOCATION, getResources().getBoolean(R.bool.
+                pref_geofenceUseMockLocationDefault));
+        if (useMockLocation) {
+            setupUsageOfMockLocation();
+        } else {
+            setupMyLocation();
+        }
     }
 
     private void setupMyLocation() {

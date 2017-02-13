@@ -63,5 +63,7 @@
 
     <string name="pref_geofenceDetectionProvider">Geofence Detection Provider</string>
     <string name="pref_geofenceDetectionConfiguration">Geofence Detection Configuration</string>
+    <string name="pref_geofenceUseMockLocationTitle">Use Mock Location</string>
+    <string name="pref_geofenceUseMockLocationSummary">Also you must select Developer options > Select mock location app > Geofence</string>
 
 </resources>

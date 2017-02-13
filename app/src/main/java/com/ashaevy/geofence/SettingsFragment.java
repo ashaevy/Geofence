@@ -9,6 +9,7 @@ import android.support.v7.preference.PreferenceFragmentCompat;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
     public static final String KEY_GEOFENCE_DETECTION_PROVIDER = "pref_geofenceDetectionProvider";
+    public static final String KEY_GEOFENCE_USE_MOCK_LOCATION = "pref_geofenceUseMockLocation";
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {

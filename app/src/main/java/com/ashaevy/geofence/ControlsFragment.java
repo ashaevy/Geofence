@@ -1,11 +1,13 @@
 package com.ashaevy.geofence;
 
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -115,7 +117,15 @@ public class ControlsFragment extends Fragment implements GeofenceContract.Contr
         });
 
         View randomLocationButton = view.findViewById(R.id.button_random_location);
-        randomLocationButton.setVisibility(View.GONE);
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        boolean useMockLocation = sharedPref.getBoolean(SettingsFragment.
+                KEY_GEOFENCE_USE_MOCK_LOCATION, getResources().getBoolean(R.bool.
+                pref_geofenceUseMockLocationDefault));
+        if (useMockLocation) {
+            randomLocationButton.setVisibility(View.VISIBLE);
+        } else {
+            randomLocationButton.setVisibility(View.GONE);
+        }
         randomLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

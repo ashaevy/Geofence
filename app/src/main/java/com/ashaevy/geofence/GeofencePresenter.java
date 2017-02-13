@@ -1,26 +1,18 @@
 package com.ashaevy.geofence;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
 
 import com.ashaevy.geofence.data.GeofenceData;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
 import com.ashaevy.geofence.transition.GeofenceHelper;
-import com.ashaevy.geofence.transition.GeofenceTransitionDetector;
 import com.ashaevy.geofence.utils.NetworkUtils;
-import com.google.android.gms.location.Geofence;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.Date;
-
-import static android.net.ConnectivityManager.CONNECTIVITY_ACTION;
 
 /**
  * Synchronize Map and Controls. Listen to geofense state changes. Updates Views.
@@ -37,6 +29,7 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
     private GeofenceData mCurrentGeofenceData;
     private int mCurrentGeofenceState;
     private boolean mGeofenceAdded;
+    private boolean useMockLocation;
 
     private String KEY_LAT = "KEY_LAT";
     private String KEY_LON = "KEY_LON";
@@ -106,6 +99,9 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     @Override
     public void startGeofencing() {
+        if (useMockLocation) {
+            mGeofenceHelper.enableMockLocation();
+        }
         mGeofenceDataSource.saveGeofenceData(mCurrentGeofenceData);
 
         LatLng position = new LatLng(mCurrentGeofenceData.getLatitude(),
@@ -120,6 +116,10 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     @Override
     public void stopGeofencing() {
+        if (useMockLocation) {
+            mGeofenceHelper.disableMockLocation();
+        }
+
         mGeofenceHelper.removeGeofence();
         mCurrentGeofenceState = Constants.GEOFENCE_STATE_UNKNOWN;
         mControlsView.setGeofenceState(Constants.GEOFENCE_STATE_UNKNOWN);
@@ -130,6 +130,10 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         Location mockLocation = generateRandomTestLocation();
         mGeofenceHelper.setMockLocation(mockLocation);
         mMapView.setMockLocation(mockLocation);
+    }
+
+    public void setUseMockLocation(boolean useMockLocation) {
+        this.useMockLocation = useMockLocation;
     }
 
     @Override

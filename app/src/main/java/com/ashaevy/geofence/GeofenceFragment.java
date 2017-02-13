@@ -68,8 +68,13 @@ public class GeofenceFragment extends Fragment {
         GeofencePresenter.Views views = new GeofencePresenter.Views(mapView,
                 controlsView, dialogsFragment);
 
+        boolean useMockLocation = sharedPref.getBoolean(SettingsFragment.
+                KEY_GEOFENCE_USE_MOCK_LOCATION, getResources().getBoolean(R.bool.
+                pref_geofenceUseMockLocationDefault));
+
         mGeofencePresenter = new GeofencePresenter(geofenceDataSource, views,
                 geofenceHelper);
+        mGeofencePresenter.setUseMockLocation(useMockLocation);
         mGeofencePresenter.create(savedInstanceState);
     }
 

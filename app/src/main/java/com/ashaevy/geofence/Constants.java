@@ -22,7 +22,8 @@ public final class Constants {
     public static final double RADIUS_OF_EARTH_METERS = 6371009;
 
     public static final LatLng KIEV = new LatLng(50.4501, 30.5234);
-    public static final float DEFAULT_RADIUS = 100;
+    public static final float DEFAULT_RADIUS = 7000;
+    public static final String DEFAULT_WIFI = "test";
 
     public static final int GEOFENCE_STATE_UNKNOWN = -1;
     public static final int GEOFENCE_STATE_INSIDE = 1;

@@ -44,6 +44,7 @@ public class SPGeofenceDataSource implements GeofenceDataSource {
         result.setLatitude(Constants.KIEV.latitude);
         result.setLongitude(Constants.KIEV.longitude);
         result.setRadius(Constants.DEFAULT_RADIUS);
+        result.setWifiName(Constants.DEFAULT_WIFI);
         return result;
     }
 

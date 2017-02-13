@@ -5,4 +5,5 @@
     <string name="pref_geofenceDetectionProviders_default">
         @string/pref_geofenceDetectionProviders_gp_location
     </string>
+    <bool name="pref_geofenceUseMockLocationDefault">false</bool>
 </resources>
