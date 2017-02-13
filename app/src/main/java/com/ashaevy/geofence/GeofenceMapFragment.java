@@ -37,6 +37,9 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
     private static final int DEFAULT_STROKE_COLOR = Color.BLACK;
     private static final int CIRCLE_PADDING_PX = 30;
 
+    public static final String CENTER_MAP_MARKER = "CenterMapMarker";
+    public static final String RADIUS_MAP_MARKER = "RadiusMapMarker";
+
     private GoogleMap mMap;
     private DraggableCircle mGeofenceCircle;
     private boolean requestRescaleFlag;
@@ -56,6 +59,11 @@ public class GeofenceMapFragment extends SupportMapFragment implements GeofenceC
     @Override
     public void setMockLocation(Location location) {
         mLocationSource.setLocation(location);
+    }
+
+    protected void showMarkerTitles() {
+        mGeofenceCircle.centerMarker.setTitle(CENTER_MAP_MARKER);
+        mGeofenceCircle.radiusMarker.setTitle(RADIUS_MAP_MARKER);
     }
 
     @Override
