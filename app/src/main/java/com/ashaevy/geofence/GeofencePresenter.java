@@ -85,17 +85,13 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         updateGeofenceAddedUIState(mGeofenceAdded);
         mControlsView.updateGeofence(mCurrentGeofenceData);
         mMapView.updateGeofence(mCurrentGeofenceData);
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(GeofenceTransitionDetector.GEOFENCE_UPDATED);
-        LocalBroadcastManager.getInstance(context).registerReceiver(mGeofenceUpdateReceiver,
-                filter);
+
         mGeofenceHelper.start();
     }
 
 
     @Override
     public void stop(Context context) {
-        LocalBroadcastManager.getInstance(context).unregisterReceiver(mGeofenceUpdateReceiver);
         mGeofenceHelper.stop();
     }
 
@@ -110,8 +106,6 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
 
     @Override
     public void startGeofencing() {
-        // start from outside position as first trigger event is entering
-        mGeofenceDataSource.saveGeofenceTransition(Geofence.GEOFENCE_TRANSITION_EXIT);
         mGeofenceDataSource.saveGeofenceData(mCurrentGeofenceData);
 
         LatLng position = new LatLng(mCurrentGeofenceData.getLatitude(),
@@ -162,6 +156,11 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         return mCurrentGeofenceData;
     }
 
+    @Override
+    public int getCurrentGeofenceState() {
+        return mCurrentGeofenceState;
+    }
+
     private Location generateRandomTestLocation() {
         Location location = new Location(LocationManager.NETWORK_PROVIDER);
         location.setLatitude(Constants.KIEV.latitude + Math.random() * 0.1);
@@ -175,16 +174,13 @@ public class GeofencePresenter implements GeofenceContract.Presenter {
         return location;
     }
 
-    private BroadcastReceiver mGeofenceUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (mGeofenceAdded) {
-                mCurrentGeofenceState = intent.getIntExtra(GeofenceTransitionDetector.
-                        KEY_GEOFENCE_UPDATE_TYPE, Constants.GEOFENCE_STATE_UNKNOWN);
-                mControlsView.setGeofenceState(mCurrentGeofenceState);
-            }
+    @Override
+    public void updateGeofenceState(int newGeofenceState) {
+        if (mGeofenceAdded) {
+            mCurrentGeofenceState = newGeofenceState;
+            mControlsView.setGeofenceState(mCurrentGeofenceState);
         }
-    };
+    }
 
     @Override
     public void saveInstanceState(Bundle outState) {

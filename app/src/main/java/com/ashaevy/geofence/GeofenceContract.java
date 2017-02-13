@@ -62,6 +62,10 @@ public interface GeofenceContract {
 
         GeofenceData getGeofenceData();
 
+        int getCurrentGeofenceState();
+
+        void updateGeofenceState(int newGeofenceState);
+
         void saveInstanceState(Bundle outState);
 
         void updateGeofenceAddedState(boolean geofencesAdded);

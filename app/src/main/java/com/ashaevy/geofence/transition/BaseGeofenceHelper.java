@@ -5,8 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.ashaevy.geofence.Constants;
 import com.ashaevy.geofence.GeofenceContract;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -39,6 +41,10 @@ public abstract class BaseGeofenceHelper implements GeofenceHelper {
 
     @Override
     public void start() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(GeofenceTransitionDetector.GEOFENCE_UPDATED);
+        LocalBroadcastManager.getInstance(mContext).registerReceiver(mGeofenceUpdateReceiver,
+                filter);
         registerNetworkReceiver(mContext);
         mGoogleApiClient.connect();
     }
@@ -46,6 +52,7 @@ public abstract class BaseGeofenceHelper implements GeofenceHelper {
     @Override
     public void stop() {
         unregisterNetworkReceiver(mContext);
+        LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mGeofenceUpdateReceiver);
         mGoogleApiClient.disconnect();
     }
 
@@ -101,6 +108,16 @@ public abstract class BaseGeofenceHelper implements GeofenceHelper {
             }
         }
     }
+
+    private BroadcastReceiver mGeofenceUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int newGeofenceState = intent.getIntExtra(GeofenceTransitionDetector.
+                    KEY_GEOFENCE_UPDATE_TYPE, Constants.GEOFENCE_STATE_UNKNOWN);
+            mPresenter.updateGeofenceState(newGeofenceState);
+        }
+    };
+
 
     private void logSecurityException(SecurityException securityException) {
         Log.e(TAG, "Invalid permission.", securityException);

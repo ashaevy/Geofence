@@ -57,7 +57,7 @@ public class GeofenceFragment extends Fragment {
                 pref_geofenceDetectionProviders_default));
         if (geofenceDetectionProvider.equals(getString(R.string.
                 pref_geofenceDetectionProviders_gp_location))) {
-            geofenceHelper = new LocationBasedGeofenceHelper(getActivity());
+            geofenceHelper = new LocationBasedGeofenceHelper(getActivity(), geofenceDataSource);
         } else if (geofenceDetectionProvider.equals(getString(R.string.
                 pref_geofenceDetectionProviders_gp_geofence))) {
             geofenceHelper = new GooglePlayGeofenceHelper(getActivity());

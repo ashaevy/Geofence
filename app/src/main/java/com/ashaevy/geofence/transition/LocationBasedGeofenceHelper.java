@@ -10,8 +10,6 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.ashaevy.geofence.Constants;
-import com.ashaevy.geofence.GeofenceContract;
-import com.ashaevy.geofence.Injection;
 import com.ashaevy.geofence.data.source.GeofenceDataSource;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -21,9 +19,6 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
-
-import java.text.DateFormat;
-import java.util.Date;
 
 /**
  * This class receives users location from Location services and detect geofence transitions.
@@ -62,9 +57,9 @@ public class LocationBasedGeofenceHelper extends BaseGeofenceHelper implements G
      */
     protected Location mCurrentLocation;
 
-    public LocationBasedGeofenceHelper(Context context) {
+    public LocationBasedGeofenceHelper(Context context, GeofenceDataSource geofenceDataSource) {
         super(context);
-        mDataSource = Injection.provideGeofenceDataSource(context);
+        mDataSource = geofenceDataSource;
         mGeofenceTransitionDetector = new GeofenceTransitionDetector(mDataSource);
     }
 
