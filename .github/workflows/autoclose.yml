@@ -8,12 +8,20 @@ jobs:
     close-new-issues:
         run-on: ubuntu-latest
         steps:
-        - name: Print a greeting
-          env:
-            MY_VAR: Hi there! My name is
-            FIRST_NAME: Mona
-            MIDDLE_NAME: The
-            LAST_NAME: Octocat
-          run: |
-            echo $MY_VAR $FIRST_NAME $MIDDLE_NAME $LAST_NAME.
+        - uses: actions/checkout@v2
+        - uses: actions/github-script@v3
+          with:
+            github-token: ${{secrets.GITHUB_TOKEN}}
+            script: |
+              issue = await github.issues.get({
+                owner: context.issue.owner,
+                repo: context.issue.repo,
+                issue_number: context.issue.number,
+              });
+              await github.issues.createComment({
+                owner: context.issue.owner,
+                repo: context.issue.repo,
+                issue_number: context.issue.number,
+                body: "Test comment!",
+              });
 
