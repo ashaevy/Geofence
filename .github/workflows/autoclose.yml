@@ -6,7 +6,7 @@ on:
 
 jobs:
     close-new-issues:
-        run-on: ubuntu-latest
+        runs-on: ubuntu-latest
         steps:
         - uses: actions/checkout@v2
         - uses: actions/github-script@v3
